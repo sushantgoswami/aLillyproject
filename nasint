@@ -1,0 +1,339 @@
+[root@saarthi xinetd.d]# ls
+chargen-dgram   daytime-dgram   discard-dgram   echo-dgram   nasint  tcpmux-server  time-stream
+chargen-stream  daytime-stream  discard-stream  echo-stream  race    time-dgram
+[root@saarthi xinetd.d]# cat nasint
+service nasint
+{
+disable = no
+flags = REUSE
+socket_type = stream
+wait = no
+user = root
+server = /remote/bin/namp/nasint
+}
+[root@saarthi xinetd.d]# cat /etc/services | grep nasint
+nasint          9868/tcp                # NAMP NAS homedir tool
+You have mail in /var/spool/mail/root
+[root@saarthi xinetd.d]#
+[root@saarthi xinetd.d]# cat /remote/bin/namp/nasint
+#!/remote/bin/namp/db/perl5101/bin/perl
+#-------------------------------------------------------------------------------
+#- $Header: /cvs/guts/code/account/namp/nebula/nasint,v 1.4 2007/07/13 14:09:58 u7x6980 Exp $
+#-
+#- Notes...: This is a modification of the original "nfsint" file that was
+#-           used on brick, helios, and other servers.  The main difference
+#-           between nfsint and nasint is that nasint is designed to work with
+#-           non-local (nfs mounted) file systems.  If we were to follow the
+#-           nfsint model, we would run nfsint on the NAS data movers.  Since
+#-           that would be difficult to arrange, we have instead configured the
+#-           NAS data movers to allow nebula to mount the NAS shares with root
+#-           permission.  That way nebula can perform the functions of the
+#-           nfsint program.  Since the file systems nebula works with are nfs
+#-           mounted, it is possible that the nfsint program would hang when
+#-           trying to communicate with these file systems.  For this reason,
+#-           the new nasint program was written, and all communication to the
+#-           file systems occurs within forked processes that are killed if
+#-           they do not respond in a timely manner.
+#-
+#-           How the program finds the best location to put a home directory:
+#-           1) If any file systems have reached the percent full high-water
+#-              mark, they are excluded as candidates for the new directory.
+#-           2) Of the remaining file systems, the one with the most KB free
+#-              is considered the best candidate.
+#-           3) If the best candidate has subdirectories, the subdirectory
+#-              with the fewest directories within it is considered the best
+#-              candidate.
+#-------------------------------------------------------------------------------
+use POSIX qw(:sys_wait_h);
+
+$forktimeoutseconds =  5;    #- Give child processes this long to gather info.
+$thresholdpct       = 98;    #- Don't use a filesystem if it's this pct full.
+
+#- Save this PID.  This variable (and all others) will be inherited by child
+#- processes.  That way we can write to a parent-specific file.
+$parentpid = $$;
+
+#- Turn on STDOUT flushing.  Useful for debugging fork behavior with print
+#- statements.
+$| = 1;
+
+$input=<STDIN>;
+#warn "DEBUG/nasint: got $input";
+chop $input;
+
+@iparse=split(':',$input);
+$code=$iparse[0];
+$method=$iparse[1];
+
+if ($code eq "4388") {
+  #-----------------------------------------------------------------------------
+  #- Section...: STAT
+  #-----------------------------------------------------------------------------
+  if ($method eq "STAT") {
+    print "Status:SUCCESS\n";
+  }
+  #-----------------------------------------------------------------------------
+  #- End Section...: STAT
+  #-----------------------------------------------------------------------------
+
+  #-----------------------------------------------------------------------------
+  #- Section...: MAKE
+  #- Notes.....: NOTE that "/net" is added.  Not bothering to fork, since
+  #-             the MAKE should be called very quickly after the FIND.
+  #-----------------------------------------------------------------------------
+  if ($method eq "MAKE") {
+    $username = $iparse[2];
+    $UID = $iparse[3];
+    $GID = $iparse[4];
+    $volume_name = $iparse[5];
+    $nashead = $iparse[6];
+
+    if ($username =~ /^[\w-]+$/)
+    {
+      system("mkdir /net1/$nashead/$volume_name/$username");
+      system("chmod 700 /net1/$nashead/$volume_name/$username");
+      system("cp /remote/bin/namp/skel/cshrc /net1/$nashead/$volume_name/$username/.cshrc");
+      system("cp /remote/bin/namp/skel/bash_profile /net1/$nashead/$volume_name/$username/.bash_profile");
+      system("cp /remote/bin/namp/skel/profile /net1/$nashead/$volume_name/$username/.profile");
+      system("cp /remote/bin/namp/skel/bashrc /net1/$nashead/$volume_name/$username/.bashrc");
+      system("cp /remote/bin/namp/skel/kshrc /net1/$nashead/$volume_name/$username/.kshrc");
+      system("chown -R $UID:$GID /net1/$nashead/$volume_name/$username");
+    }
+    if (-e "/net1/$nashead/$volume_name/$username") {
+      print "Status:SUCCESS\n";
+    } else {
+      print "Status:FAIL\n";
+    }
+  }
+  #-----------------------------------------------------------------------------
+  #- End Section...: MAKE
+  #-----------------------------------------------------------------------------
+
+  #-----------------------------------------------------------------------------
+  #- Section...: FIND
+  #-----------------------------------------------------------------------------
+  if ($method eq "FIND") {
+    $username=$iparse[3];
+
+    $amountfree  = -1;
+    $bestshare   = "NA";
+    $bestnashead = "NA";
+
+    #- List of all NAS file systems that this server is allowed to create home
+    #- directories on.  Use FQDNs!
+    if ($username =~ /-ds/) {
+      @filesystems = qw (
+           /net1/calipso.am.lilly.com/homedir01
+      );
+    }
+    #elsif ($username !~ /[a-z][0-9,a-z][0-9,a,f,x][0-9,a-c][0-9][0-9][0-9]/) {
+    #  @filesystems = qw (
+    #       /net/calipso.am.lilly.com/svcaccts
+    #  );
+    #}
+    else {
+      @filesystems = qw (
+              /net1/gulf.d51.lilly.com/nasexp01
+              /net1/gulf.d51.lilly.com/nasexp02
+              /net1/cove.d51.lilly.com/nasexp03
+              /net1/cove.d51.lilly.com/nasexp04
+              /net1/gulf.d51.lilly.com/nasexp06
+              /net1/cove.d51.lilly.com/nasexp07
+              /net1/cove.d51.lilly.com/nasexp08
+              /net1/gulf.d51.lilly.com/nasexp09
+              /net1/gulf.d51.lilly.com/nasexp10
+              /net1/cove.d51.lilly.com/nasexp11
+              /net1/cove.d51.lilly.com/nasexp12
+              /net1/gulf.d51.lilly.com/nasexp13
+              /net1/gulf.d51.lilly.com/nasexp14
+              /net1/cove.d51.lilly.com/nasexp15
+              /net1/cove.d51.lilly.com/nasexp16
+              /net1/gulf.d51.lilly.com/nasexp17
+              /net1/gulf.d51.lilly.com/nasexp18
+              /net1/cove.d51.lilly.com/nasexp19
+              /net1/cove.d51.lilly.com/nasexp20
+              /net1/gulf.d51.lilly.com/nasexp21
+              /net1/gulf.d51.lilly.com/nasexp22
+      );
+      #- If any of the above file systems have subdirectories, note them here.
+      %subdirs = (
+        nasexp01 => [qw( home20 home21 home22 )],
+        nasexp02 => [qw( home23 home24 home25 )],
+        nasexp03 => [qw( home26 home27 home28 )],
+        nasexp04 => [qw( home29 home30 home31 )],
+      );
+    }
+
+
+    #- First, see if this user has a home directory already.
+    foreach $fs (@filesystems) {
+      @path = split(/\//, $fs);
+      $nashead = $path[$#path - 1];
+      $mount = $path[$#path];
+      if (defined $subdirs{$mount}) {
+        foreach $dir (@{$subdirs{$mount}}) {
+          if (-e "$fs/$dir/$username") {
+            if (index($nashead,"calipso") != -1) {
+              $mountopts = "-rw,sec=krb5"
+            }else{
+              $mountopts = "-rw,sec=sys"
+            }
+            print "User:$username:Share:/$mount/$dir:Space:exist:NAShead:$nashead:Options:$mountopts\n";
+            exit;
+          }
+        }
+      } else {
+        if (-e "$fs/$username") {
+          if (index($nashead,"calipso") != -1) {
+            $mountopts = "-rw,sec=krb5"
+          }else{
+            $mountopts = "-rw,sec=sys"
+          }
+          print "User:$username:Share:/$mount:Space:exist:NAShead:$nashead:Options:$mountopts\n";
+          exit;
+        }
+      }
+    }
+
+    if ($username =~ /^[\w-]+$/)
+    {
+      foreach $fs (@filesystems) {
+      $fto = $forktimeoutseconds * 4;
+      #-------------------------------------------------------------------------
+      #- Section...: FORK
+      #- Notes.....: Labels have to sit at the left-hand margin, that's why
+      #-             FORK: is not indented.
+      #-------------------------------------------------------------------------
+FORK: {
+        if ($pid = fork) {
+          #---------------------------------------------------------------------
+          #- Section...: Parent process
+          #- Notes.....: If you love your child, set it free.  If it doesn't
+          #-             come back within the time you specified, hunt it down
+          #-             and kill it.
+          #---------------------------------------------------------------------
+          while ($fto--) {
+            if (waitpid($pid,&WNOHANG) == -1) {
+              $pid=0;
+              last;
+            } else {
+              #print "I am the parent $$, watching $pid.\n";
+              #- Nifty hack to sleep .25 seconds, thanks Google :)
+              select(undef, undef, undef, 0.25);
+            }
+          }
+          if ($pid) {
+            #print "I am the parent $$, killing $pid.\n";
+            kill 9,$pid;
+          }
+          #---------------------------------------------------------------------
+          #- End Section...: Parent process
+          #---------------------------------------------------------------------
+        } elsif (defined $pid) {
+          #---------------------------------------------------------------------
+          #- Section...: Child process
+          #---------------------------------------------------------------------
+          $rc = ( ! -d $fs);
+          if ($rc == 0) {
+            @out = `df -kP $fs`;
+            ($path, $total,$used,$free,$pct,$dffs) = split(" ", $out[$#out]);
+            #print ("total: $total, used: $used, free: $free, pct: $pct, dffs: $dffs\n");
+            $pct =~ s/\%//g;
+            @path = split(/\//, $fs);
+            $mount = $path[$#path];
+            $fewest = "";
+            if (defined $subdirs{$mount}) {
+              foreach $dir (@{$subdirs{$mount}}) {
+                @ls = `ls $fs/$dir`;
+                #- Note how this deals with "ties" - last in subdir list wins.
+                $subcounts{$#ls} = $dir;
+              }
+              $fewest = $subcounts{(sort bynumber keys %subcounts)[0]};
+
+              #- If we had a problem finding the dir with fewest subdirs,
+              #- just use the last one we looked at.
+              $fewest = $dir if ($fewest eq "");
+            }
+            if (open(OUT, ">>/tmp/$parentpid.nasint")) {
+              print OUT join("|", ($fs,$free,$pct,$fewest)) . "\n";
+              close OUT;
+            }
+          }
+          exit;
+          #---------------------------------------------------------------------
+          #- End Section...: Child process
+          #---------------------------------------------------------------------
+        } elsif ($! =~ /no more process/i) {
+          sleep 2;
+          redo FORK;
+
+        } else {
+          #print "Unable to fork process!\n";
+        }
+      }
+      #-------------------------------------------------------------------------
+      #- End Section...: FORK
+      #-------------------------------------------------------------------------
+    }
+
+    #- If the kids wrote to the log file, pull in the contents.
+    if (open(IN, "/tmp/$parentpid.nasint")) {
+      @data = <IN>;
+      close IN;
+      unlink "/tmp/$parentpid.nasint";
+    }
+
+    #- Determine which file system and directory is the best candidate.
+    foreach $line (@data) {
+      chomp $line;
+      ($fs,$free,$pct,$fewest) = split(/\|/, $line);
+      next if ($pct >= $thresholdpct);
+      if ($free > $bestfree) {
+        $bestfree = $free;
+        $bestfs = $fs;
+        $bestdir = $fewest;
+      }
+    }
+
+    if ($bestfree ne "") {
+      $amountfree = $bestfree;
+    }
+
+    if ($bestfs ne "") {
+      @path = split(/\//, $bestfs);
+      $bestnashead = $path[$#path - 1];
+      $mount = $path[$#path];
+      if (index($bestnashead,"calipso") != -1) {
+        $mountopts = "-rw,sec=krb5"
+      }else{
+        $mountopts = "-rw,sec=sys"
+      }
+      if ($bestdir ne "") {
+        $bestshare = "/$mount/$bestdir";
+      } else {
+        $bestshare = "/$mount";
+      }
+    }
+
+    print "User:$username:Share:$bestshare:Space:$amountfree:NAShead:$bestnashead:Options:$mountopts\n";
+   } else {
+    print "Share:ERROR-Invalid User:Space:NA:NAShead:NA\n";
+   }
+  }
+  #-----------------------------------------------------------------------------
+  #- End Section...: FIND
+  #-----------------------------------------------------------------------------
+} else {
+  print "Invalid init: Use the makehome or findhome client!\n";
+}
+
+#-------------------------------------------------------------------------------
+#- Sub...: bynumber
+#-------------------------------------------------------------------------------
+sub bynumber {
+  $a <=> $b;
+}
+#-------------------------------------------------------------------------------
+#- End Sub...: bynumber
+#-------------------------------------------------------------------------------
+[root@saarthi xinetd.d]#
