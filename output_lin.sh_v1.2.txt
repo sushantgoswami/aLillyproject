@@ -1,0 +1,221 @@
+### Redhat Linux cofiguration output ###
+### Written by Sushant dated 03Jan2014 v1.0###
+### Written by Sushant dated 02Jan2014 v1.1###
+### Written by Sushant dated 02Jan2014 v1.2###
+#!/bin/bash
+
+CURRENTDATE=`date | awk '{print $3$2$6}'`
+CURRENTHOST=`uname -a | awk '{print $2}'`
+EMAIL_ID=TCS_Platform_Linux@lists.lilly.com
+
+cat > lin_output.sh << EOF
+PATH=$PATH:/opt/VRTS/bin:/opt/VRTSvcs/bin:/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:/etc/vx/bin
+TMOUT=0
+echo "==================Redhat Release ==========="
+cat /etc/redhat-release
+echo "  ================  uptime  ================ "
+uptime
+echo "  ================ df -Ph ================ "
+df -k
+echo "  ================ df -Phl ================ "
+df -Phl
+echo " ================  df -Ph | wc -l ================ "
+df -k | wc -l
+echo "  ================  uname -a  ================ "
+uname -a
+echo "  ================ free  ================ "
+free
+echo "  ================ free -m  ================ "
+free -m
+echo "  ================  swapon -s ================ "
+cat /proc/swaps
+echo "  ================ fdisk -l  ================ "
+fdisk -l
+echo "  ================ ps -eaf ================ "
+ps -eaf
+echo "  ================ ifconfig -a  ================ "
+ifconfig -a
+echo "  ================ ip addr  ================ "
+ip addr
+echo "  ================ route -n ================ "
+route -n
+echo "================ ip route list ================ "
+ip route list
+echo "==================== netstat -tulpn ============="
+netstat -tulpn
+echo "==================== netstat -rn ============="
+netstat -rn
+echo "======================/etc/inittab==================="
+cat /etc/inittab
+echo "  ================  cat /etc/fstab ================  "
+cat /etc/fstab
+echo "  ================ cat /etc/mtab ================  "
+cat /etc/mtab
+echo "  ================ cat /etc/resolv.conf ================  "
+cat /etc/resolv.conf
+if [ -f /etc/samba/smb.conf ]; then
+echo "  ================ /etc/samba/smb.conf ================  "
+cat /etc/samba/smb.conf
+fi
+echo "  ================ cat /etc/resolv.conf ================  "
+cat /etc/resolv.conf
+echo "  ================ cat /etc/nsswitch.conf  ================  "
+cat /etc/nsswitch.conf
+echo "  ================ cat /etc/hosts  ================ "
+cat /etc/hosts
+echo "  ================ cat /etc/passwd ================ "
+cat /etc/passwd
+echo "  ================ cat /etc/shadow  ================ "
+cat /etc/shadow
+echo "  ================ cat /etc/group  ================ "
+cat /etc/group
+if [ -f /etc/auto_master ]; then
+echo "  ================ cat /etc/auto_master  ================ "
+cat /etc/auto_master
+fi
+if [ -f /etc/auto.master ]; then
+echo "  ================ cat /etc/auto.master  ================ "
+cat /etc/auto.master
+fi
+echo "  ======================= sysctl =======================  "
+sysctl -a
+echo "  ================ ps -eaf | grep -i smon ================ "
+ps -eaf | grep -i smon
+echo "  ================ ps -eaf | grep -i pmon  ================ "
+ps -eaf | grep -i pmon
+echo "  ================ ps -eaf | grep -i dataserv  ================ "
+ps -eaf | grep -i dataserv
+echo "  ================ showmount -e  ================ "
+showmount -e
+echo "  ================ w  ================ "
+w
+echo "  ================ df h ================ "
+df -h
+echo " ================ dmidecode =============="
+dmidecode
+echo " ================ pvdisplay ================"
+pvdisplay
+echo " ================ vgdisplay ================"
+vgdisplay
+echo " ================ lvdisplay ================"
+lvdisplay
+echo " ================lvs display ================"
+lvs -a -o +devices
+echo " ================vgs display ================"
+vgs
+echo " ================chkconfig list ================"
+chkconfig --list
+echo "  ================ mount  ================ "
+mount -v
+echo "  ================ cat /proc/mdstat  ================ "
+cat /proc/mdstat
+echo "  ================ grep F /proc/mdstat  ================ "
+grep F /proc/mdstat
+echo "  ================ Raid volme details  ================ "
+for i in `cat /proc/mdstat| grep -i ^md|awk '{print $1}'`;do echo "Showing details of /dev/$i"; mdadm --detail /dev/$i;echo " ==========  == ";done
+echo "====================== smart array disk status =========="
+hpacucli ctrl all show config
+echo "  ================ cfgdisk  ================ "
+cfgdisk
+echo " ============= grep F /proc/mdstat =========== "
+grep F /proc/mdstat
+echo "  ================ cd /etc/sysconfig/network  ================ "
+cat /etc/sysconfig/network
+echo " ================/etc/sysconfig/network-scripts ================  "
+ls -l /etc/sysconfig/network-scripts
+echo " ================/etc/sysconfig/network-scripts ifcfg-ethxx ================  "
+echo "ifcfg-bond0===================="
+cat /etc/sysconfig/network-scripts/ifcfg-bond0
+echo "ifcfg-eth0===================="
+cat /etc/sysconfig/network-scripts/ifcfg-eth0
+echo "ifcfg-eth1===================="
+cat /etc/sysconfig/network-scripts/ifcfg-eth1
+echo "ifcfg-eth2===================="
+cat /etc/sysconfig/network-scripts/ifcfg-eth2
+echo "ifcfg-eth3===================="
+cat /etc/sysconfig/network-scripts/ifcfg-eth3
+echo "ifcfg-eth4===================="
+cat /etc/sysconfig/network-scripts/ifcfg-eth4
+echo "ifcfg-eth5===================="
+cat /etc/sysconfig/network-scripts/ifcfg-eth5
+echo "============================bonding==============="
+cat /proc/net/bonding/bond0
+cat /proc/net/bonding/bond1
+echo " ================= list of lspci ================== "
+lspci
+echo " ================= list of lsusb ================== "
+lsusb
+echo " ================= list of lsscsi ================== "
+lsscsi
+echo " ================= list of lscpu ================== "
+lscpu
+echo " ================= list of lsof ================== "
+lsof
+echo "================  lsmod output ================"
+lsmod
+echo "================ find wwn =================="
+systool -c fc_host -v
+echo "================  Grub menu.lst ================"
+cat /boot/grub/menu.lst
+echo "==========================================="
+cat /etc/grub.conf
+echo "==================== RPM all ======================="
+rpm -qa
+echo "==========================main.cf======"
+cat /etc/VRTSvcs/conf/config/main.cf
+echo "================ VCS configuration ================"
+if [ -f /opt/VRTS/bin/hastatus ]; then
+echo "==================== hastatus -summ ========================";
+/opt/VRTSvcs/bin/hastatus -summ;
+echo "====================/etc/llttab========================";
+cat /etc/llttab;
+echo "====================/etc/llthosts========================";
+cat /etc/llthosts;
+echo "=====================/etc/gabtab=======================";
+cat /etc/gabtab;
+echo "=====================/etc/vxfendg=======================";
+cat /etc/vxfendg;
+echo "=====================/etc/vxfenmode=======================";
+cat /etc/vxfenmode;
+echo "==================/etc/vxfentab==========================";
+cat /etc/vxfentab;
+echo "=====================gabconfig=============================";
+gabconfig -a;
+echo "====================lltstat==============================";
+lltstat -nvv;
+else
+echo "====== NO VCS found in Server ======";
+fi
+
+echo "================ VxVM Configuration ================"
+if [ -f /opt/VRTS/bin/vxdisk ]; then
+echo "================ VxVM Configuration ================";
+/opt/VRTS/bin/vxdisk -o alldgs list;
+echo "================ vxdg list ================";
+/opt/VRTS/bin/vxdg list;
+echo "================ vxdisk native list================";
+/opt/VRTS/bin/vxdisk -e list;
+echo "================ vxdmpadm list================";
+/opt/VRTS/bin/vxdmpadm listenclosure all;
+echo "================ vxdmpadm list================";
+/opt/VRTS/bin/vxdmpadm listctlr all;
+echo "================= vxprint ======================";
+/opt/VRTS/bin/vxprint -ht;
+echo "====================vxlic=====================";
+/opt/VRTS/bin/vxlicrep;
+else
+echo "====== NO VxVM found in Server ======";
+fi
+
+echo "================= multipath  ======================"
+multipath -ll
+echo "================= powerpath  ======================"
+powermt display dev=all
+echo "================= hplog  ======================"
+hplog -v
+echo "=================================================="
+EOF
+touch output-$CURRENTHOST-$CURRENTDATE.doc
+>output-$CURRENTHOST-$CURRENTDATE.doc
+/bin/sh lin_output.sh >> output-$CURRENTHOST-$CURRENTDATE.doc 2>&1
+uuencode output-$CURRENTHOST-$CURRENTDATE.doc output-$CURRENTHOST-$CURRENTDATE.doc | mailx -s output-$CURRENTHOST-$CURRENTDATE.doc $EMAIL_ID

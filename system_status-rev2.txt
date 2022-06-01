@@ -1,0 +1,207 @@
+#!/bin/bash
+############# Name : system_status.sh ###############
+############# Version_Number 0.10 #############
+#################### Revision ######################
+# version 0.01 written by Sushant Goswami Dated 25-apr-2018
+# Revision
+# Revision
+# Revision
+# Revision
+######################## Scope ######################
+# The script is intended to check top 5 cpu and memory process, it also monitors the ram utilisation, it is needed to be set by cron
+# example */5 * * * * /opt/system_status.sh
+# SERVER_TYPE can be DMZ or NORMAL
+##################### User Defined Variables #########################
+ZONE=ALL_ZONE
+EMAIL_SEND=1
+PRIMARY_EMAIL=goswami_sushant@network.lilly.com
+SECONDARY_EMAIL=karthick_manivannan@network.lilly.com
+PRIMARY_MAIL_ENABLE=0
+SECONDARY_MAIL_ENABLE=0
+NAS_SEND=1
+NASSERVER=uxwebprd.am.lilly.com
+NASDIR=/opt/status_report
+TARGETDIR=/opt/status_report
+WORKDIR=/tmp
+LOGDIR=log
+LOGFILE=system_status.log
+REPORT_HOUR=2354
+NAS_COPY_HOUR=1054
+SERVER_TYPE=NORMAL
+LOCAL_STATUS_REPO=/opt/status_report
+RETAIN_TIME=15
+############## Pre Fixed Variables ##############################
+SERVER_NAME=`hostname`
+CURRENTDATE=`date | awk '{print $3"-"$2"-"$6}'`
+CURRENTTIMESTAMP=`date | awk '{print $4}' | sed '$ s/:/./g'`
+CURRENT_HOUR=`date | awk '{print $4}' | awk -F ":" '{print $1$2}'`
+###########################################################################
+if [ ! -d /$WORKDIR/$LOGDIR ]; then
+ mkdir -p /$WORKDIR/$LOGDIR
+fi
+if [ ! -d $WORKDIR/$LOGDIR/$CURRENTDATE ]; then
+ mkdir -p $WORKDIR/$LOGDIR/$CURRENTDATE
+fi
+CURRENT_WORKING_LOCATION=$WORKDIR/$LOGDIR/$CURRENTDATE
+###################### Help Menu ##########################################
+if [ -z $1 ]; then
+ echo "(MSG 000): No arguments passed, continuing to regular task" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-$CURRENTDATE.txt
+else
+ if [ $1 == "-help" ]; then
+  echo "(MSG HELP): The script is intended to check top 5 cpu and memory process, it also monitors the ram utilisation, it is needed to be set by cron"
+  exit 0;
+ fi
+fi
+######################## Duplicate instance check ######################################
+DUPLICATE_INSTANCE=2
+DUPLICATE_INSTANCE=`ps -ef | grep system_status.sh | grep -v grep | wc -l`
+if [ $DUPLICATE_INSTANCE -ge 3 ]; then
+ echo "(MSG 000): Duplicate instance found, .. exiting." | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+ exit 0;
+fi
+#################### Do not edit below this line, use variables above ###########################################
+if [ ! -d /$WORKDIR/$LOGDIR ]; then
+ mkdir -p /$WORKDIR/$LOGDIR
+fi
+if [ ! -d $WORKDIR/$LOGDIR/$CURRENTDATE ]; then
+ mkdir -p $WORKDIR/$LOGDIR/$CURRENTDATE
+fi
+CURRENT_WORKING_LOCATION=$WORKDIR/$LOGDIR/$CURRENTDATE
+#################### Local Repo check ############################
+if [ ! -d $LOCAL_STATUS_REPO ] && [ $SERVER_TYPE == DMZ ]; then
+r
+r
+ echo "(MSG 000): Local repo is not available. However, Server seems DMZ, .. exiting." | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-$CURRENTDATE.txt
+ if [ $PRIMARY_MAIL_ENABLE == 1 ]; then
+  echo "System_status script on $SERVER_NAME, Local repo is not available. Please check" | mailx -s "Error: Performance report on $SERVER_NAME" -r reporter@$SERVER_NAME.am.lilly.com $PRIMARY_EMAIL
+ fi
+ exit 0;
+fi
+if [ -d $LOCAL_STATUS_REPO ] && [ $SERVER_TYPE == DMZ ]; then
+ DEVICE=`df -Phl $LOCAL_STATUS_REPO | tail -1 | awk '{print $1}'`
+ if [ $DEVICE == /dev/mapper/rootvg-status_report_lv ]; then
+  echo "Local device for reports is prperly mounted" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-$CURRENTDATE.txt
+ else
+  echo "Local device for reports is not prperly mounted" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-$CURRENTDATE.txt
+  exit 0;
+ fi
+fi
+####################
+echo "=================================================================================================================" >> $CURRENT_WORKING_LOCATION/$LOGFILE-top10cpu-$CURRENTDATE.txt
+echo "(MSG 001): Below top 10 CPU process" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-top10cpu-$CURRENTDATE.txt
+echo "USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-top10cpu-$CURRENTDATE.txt
+ps aux | sort -k 3 -rn | head -10 | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-top10cpu-$CURRENTDATE.txt
+
+echo "=================================================================================================================" >> $CURRENT_WORKING_LOCATION/$CURRENTDATE/$LOGFILE-top10mem-$CURRENTDATE.txt
+echo "(MSG 002): Below top 10 MEMORY process" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-top10mem-$CURRENTDATE.txt
+echo "USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-top10mem-$CURRENTDATE.txt
+ps aux | sort -k 4 -rn | head -10 | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$CURRENTDATE/$LOGFILE-top10mem-$CURRENTDATE.txt
+
+echo "=================================================================================================================" >> $CURRENT_WORKING_LOCATION/$LOGFILE-memstat-$CURRENTDATE.txt
+echo "(MSG 003): Below is free command output" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-memstat-$CURRENTDATE.txt
+free | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-memstat-$CURRENTDATE.txt
+
+echo "=================================================================================================================" >> $CURRENT_WORKING_LOCATION/$LOGFILE-dstate-$CURRENTDATE.txt
+echo "(MSG 003): Below is the Fetched D state processes" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-dstate-$CURRENTDATE.txt
+ps aux | grep " D " | grep -v grep | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-dstate-$CURRENTDATE.txt
+
+echo "=================================================================================================================" >> $CURRENT_WORKING_LOCATION/$LOGFILE-vmstat-$CURRENTDATE.txt
+echo "(MSG 004): Below is the Fetched vmstat status" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-vmstat-$CURRENTDATE.txt
+vmstat 1 5 | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-vmstat-$CURRENTDATE.txt
+
+echo "=================================================================================================================" >> $CURRENT_WORKING_LOCATION/$LOGFILE-io-$CURRENTDATE.txt
+echo "(MSG 005): Below is the io status" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-io-$CURRENTDATE.txt
+KERNEL=`uname -r | cut -d "." -f 1,2`
+if [ $KERNEL == "2.6" ]; then
+IOSTAT_LINES=`iostat -n 1 2 | wc -l`; HALF_IOSTAT_LINES=`expr $IOSTAT_LINES / 2`
+iostat -n 1 2 | tail -$HALF_IOSTAT_LINES | column -t | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-io-$CURRENTDATE.txt
+fi
+if [ $KERNEL == "3.10" ]; then
+IOSTAT_LINES=`nfsiostat 1 2 | wc -l`; HALF_IOSTAT_LINES=`expr $IOSTAT_LINES / 2`
+nfsiostat 1 2 | tail -$HALF_IOSTAT_LINES >> $CURRENT_WORKING_LOCATION/$LOGFILE-io-$CURRENTDATE.txt
+fi
+
+echo "=================================================================================================================" >> $CURRENT_WORKING_LOCATION/$LOGFILE-process-count-$CURRENTDATE.txt
+echo "(MSG 006): Below is the process count for users" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-process-count-$CURRENTDATE.txt
+ps -elfT | awk '{print $3}'  | sort | uniq -c | awk '{print $2, " ", $1}'  | column -t  | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-process-count-$CURRENTDATE.txt
+
+echo "=================================================================================================================" >> $CURRENT_WORKING_LOCATION/$LOGFILE-dmesg-$CURRENTDATE.txt
+echo "(MSG 007): Below are the daemon messages, please see above for more logs" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-dmesg-$CURRENTDATE.txt
+if [ ! -f $WORKDIR/$LOGDIR/$LOGFILE-dmesg-$CURRENTDATE.txt ]; then
+ dmesg | tail -25 | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-dmesg-$CURRENTDATE.txt
+fi
+DMESG_CHECK=`tail -3 $CURRENT_WORKING_LOCATION/$LOGFILE-dmesg-$CURRENTDATE.txt | head -1 | awk '{print $2}'`
+if [ -z $DMESG_CHECK ]; then
+ DMESG_CHECK=0
+fi
+DMESG_COMPARE=`dmesg | tail -1 | awk '{print $1}'`
+if [ $DMESG_CHECK == $DMESG_COMPARE ]; then
+ dmesg | tail -5 | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-dmesg-$CURRENTDATE.txt
+else
+ dmesg | tail -25 | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-dmesg-$CURRENTDATE.txt
+fi
+#################### Mailing report ####################
+if [ $CURRENT_HOUR -gt $REPORT_HOUR ] && [ $EMAIL_SEND == 1 ] && [ $CURRENT_HOUR -lt `expr $REPORT_HOUR + 5` ]; then
+ if [ $PRIMARY_MAIL_ENABLE == 1 ]; then
+  echo "Performance report on $SERVER_NAME" | mailx -s "Performance report on $SERVER_NAME" -r reporter@$SERVER_NAME.am.lilly.com -a $CURRENT_WORKING_LOCATION/$LOGFILE-top10cpu-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-top10mem-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-memstat-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-dstate-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-vmstat-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-process-count-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-dmesg-$CURRENTDATE.txt $PRIMARY_EMAIL
+ fi
+ if [ $SECONDARY_MAIL_ENABLE == 1 ]; then
+  echo "Performance report on $SERVER_NAME" | mailx -s "Performance report on $SERVER_NAME" -r reporter@$SERVER_NAME.am.lilly.com -a $CURRENT_WORKING_LOCATION/$LOGFILE-top10cpu-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-top10mem-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-memstat-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-dstate-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-vmstat-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-process-count-$CURRENTDATE.txt -a $WORKDIR/$LOGDIR/$LOGFILE-dmesg-$CURRENTDATE.txt $SECONDARY_EMAIL
+ fi
+fi
+################# copy report to NAS ###################
+if [ $NAS_COPY_HOUR -gt $REPORT_HOUR ] && [ $CURRENT_HOUR -lt `expr $NAS_COPY_HOUR + 5` ] && [ $SERVER_TYPE != DMZ ]; then
+ if [ -d $TARGETDIR ]; then
+  echo "(MSG 007): $TARGETDIR directory exist on server" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-$CURRENTDATE.txt
+ else
+  mkdir -p $TARGETDIR
+ fi
+ /usr/bin/timeout 2s mount $NASSERVER:$NASDIR $TARGETDIR
+ MOUNTPOINT=`df -Ph $TARGETDIR | grep $NASSERVER | awk '{print $1}'`
+ if [ -z $MOUNTPOINT ]; then
+  echo "(MSG 008): NAS filesystem is unable to mount" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-$CURRENTDATE.txt
+  echo "The NASserver is not mounting in $SERVER_NAME" | mailx -s "The NASserver is not mounting in $SERVER_NAME" -r reporter@$SERVER_NAME.am.lilly.com $PRIMARY_EMAIL
+  echo "The NASserver is not mounting in $SERVER_NAME" | mailx -s "The NASserver is not mounting in $SERVER_NAME" -r reporter@$SERVER_NAME.am.lilly.com $SECONDARY_EMAIL
+ else
+  if [ ! -d $TARGETDIR/$SERVER_NAME ]; then
+   mkdir -p $TARGETDIR/$SERVER_NAME
+  fi
+  if [ -d $TARGETDIR/$SERVER_NAME ]; then
+   rsync -avrp $WORKDIR/$LOGDIR/* $TARGETDIR/$SERVER_NAME
+   if [ -d $TARGETDIR/$SERVER_NAME ]; then
+    find $TARGETDIR/$SERVER_NAME -mtime +$RETAIN_TIME -exec rm -rf {} \; | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $CURRENT_WORKING_LOCATION/$LOGFILE-$CURRENTDATE.txt
+   fi
+   umount $TARGETDIR
+  fi
+ fi
+fi
+################# copy report to Local #################
+WRITE_DEVICE=`df -Ph | grep /opt/status_report | awk '{print $1}'`
+if [ -z $WRITE_DEVICE ]; then
+ if [ -h /dev/rootvg/status_report_lv ]; then
+ mount /dev/rootvg/status_report_lv $LOCAL_STATUS_REPO
+ fi
+fi
+
+if [ $CURRENT_HOUR -gt $REPORT_HOUR ] && [ $CURRENT_HOUR -lt `expr $REPORT_HOUR + 5` ] && [ $SERVER_TYPE == DMZ ] && [ -d $LOCAL_STATUS_REPO ]; then
+ if [ ! -d $LOCAL_STATUS_REPO/$CURRENTDATE ]; then
+  mkdir -p $LOCAL_STATUS_REPO/$CURRENTDATE
+ fi
+ cp $WORKDIR/$LOGDIR/$LOGFILE-top10cpu-$CURRENTDATE.txt $LOCAL_STATUS_REPO/$CURRENTDATE
+ cp $WORKDIR/$LOGDIR/$LOGFILE-top10mem-$CURRENTDATE.txt $LOCAL_STATUS_REPO/$CURRENTDATE
+ cp $WORKDIR/$LOGDIR/$LOGFILE-memstat-$CURRENTDATE.txt $LOCAL_STATUS_REPO/$CURRENTDATE
+ cp $WORKDIR/$LOGDIR/$LOGFILE-dstate-$CURRENTDATE.txt $LOCAL_STATUS_REPO/$CURRENTDATE
+ cp $WORKDIR/$LOGDIR/$LOGFILE-vmstat-$CURRENTDATE.txt $LOCAL_STATUS_REPO/$CURRENTDATE
+ cp $WORKDIR/$LOGDIR/$LOGFILE-process-count-$CURRENTDATE.txt $LOCAL_STATUS_REPO/$CURRENTDATE
+ cp $WORKDIR/$LOGDIR/$LOGFILE-io-$CURRENTDATE.txt $LOCAL_STATUS_REPO/$CURRENTDATE
+ cp $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt $LOCAL_STATUS_REPO/$CURRENTDATE
+ cp $WORKDIR/$LOGDIR/$LOGFILE-dmesg-$CURRENTDATE.txt $LOCAL_STATUS_REPO/$CURRENTDATE
+ if [ -d $LOCAL_STATUS_REPO ]; then
+  find $LOCAL_STATUS_REPO -mtime +$RETAIN_TIME -exec rm -rf {} \; | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+ fi
+fi
+################### Cleanup log files ##################
+if [ $CURRENT_HOUR -gt $REPORT_HOUR ] && [ $CURRENT_HOUR -lt `expr $REPORT_HOUR + 5` ]; then
+find $WORKDIR/$LOGDIR/ -mtime +3 -exec rm -rf {} \; | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+fi
+#################### Do not edit above this line, use variables above in User Defined Variables ###########################################

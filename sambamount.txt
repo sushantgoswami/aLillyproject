@@ -1,0 +1,32 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------
+#- Original Author...: Sushant Goswami
+#- Creation Date.....: 17 Apr 2019
+#- Purpose...........: For starting samba mount services	
+#-------------------------------------------------------------------------------
+#-            (C) Copyright 2018 Eli Lilly and Company
+#-                       All Rights Reserved
+#-------------------------------------------------------------------------------
+#- The next two lines are used by the chkconfig utility on Linux systems, and
+#- are ignored on Sun systems.
+# chkconfig: 35 50 01
+# description: sambamount
+
+                                                                                      
+                                                             
+case "$1" in
+  start)
+    echo "Starting samba mount" >> /var/log/messages
+    mount -t cifs -o username=iep_dev_sftp@am.lilly.com,password=D54ajS7n //mango.am.lilly.com/IEP_1 /transfer/mango
+    ;;
+  stop)
+    echo "Stopping samba mount" >> /var/log/messages
+    umount /transfer/mango 
+    ;;
+  *)
+    echo "Usage: startup script smb mount {start|stop}"
+    exit 1
+esac
+                                                                                              
+exit 0
+

@@ -1,0 +1,33 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------
+#- Original Author...: Sushant Goswami
+#- Creation Date.....: 25 Jan 2020
+#- Purpose...........: For starting and stoping tcpdump service
+#-------------------------------------------------------------------------------
+#-            (C) Copyright 2018 Eli Lilly and Company
+#-                       All Rights Reserved
+#-------------------------------------------------------------------------------
+#- The next two lines are used by the chkconfig utility on Linux systems, and
+#- are ignored on Sun systems.
+# chkconfig: 35 50 01
+# description: take_tcpdump.sh
+
+INTERFACE=eno16780032
+DUMP_DIR=tcpdump
+
+
+case "$1" in
+  start)
+    echo "Starting tcpdump"
+    nohup tcpdump -i $INTERFACE -w /$DUMP_DIR/$(hostname)-%m-%d-%H-%M-%S-%s.pcap -G 300 &
+    ;;
+  stop)
+    echo "Stopping tcpdump"
+    kill -9 `ps -ef | grep "tcpdump -i $INTERFACE" | grep -v grep | awk '{print $2}'`
+    ;;
+  *)
+    echo "Usage: httpd server WHO script {start|stop}"
+    exit 1
+esac
+
+exit 0

@@ -1,0 +1,46 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------
+#- Original Author...: Sushant Goswami
+#- Creation Date.....: 25 Aug 2020
+#- Purpose...........: For check clean power cycle of server event.	
+#-------------------------------------------------------------------------------
+#-            (C) Copyright 2018 Eli Lilly and Company
+#-                       All Rights Reserved
+#-------------------------------------------------------------------------------
+#- The next two lines are used by the chkconfig utility on Linux systems, and
+#- are ignored on Sun systems.
+# chkconfig: 35 99 01
+# description: IIHS_clean_power_service
+                                                                                          
+                                                             
+case "$1" in
+  start)
+    echo "Logging lock in var log directory"
+    if [ -f /var/log/IIHS_clean_power_service.lock ]; then
+     logger "[IIHS_clean_power_service]: The last reboot of server was unclean"
+     touch /var/log/IIHS_clean_power_service_unclean.lock
+    else
+     logger "[IIHS_clean_power_service]: The last reboot of server was clean"
+     touch /var/log/IIHS_clean_power_service.lock
+    fi
+    ;;
+  stop)
+    echo "Logout lock in var log directory"
+    logger "[IIHS_clean_power_service]: Removing lock file from server"
+    if [ -f /var/log/IIHS_clean_power_service.lock ]; then
+     rm -rf /var/log/IIHS_clean_power_service.lock
+    else
+     logger "[IIHS_clean_power_service]: The IIHS_clean_power_service.lock is missing"
+    fi
+    if [ -f /var/log/var/log/IIHS_clean_power_service_unclean.lock ]; then
+     logger "[IIHS_clean_power_service]: The IIHS_clean_power_service_unclean.lock tag is removed"
+     rm -rf /var/log/var/log/IIHS_clean_power_service_unclean.lock
+    fi
+    ;;
+  *)
+    echo "Usage: IIHS_clean_power_service {start|stop}"
+    exit 1
+esac
+                                                                                              
+exit 0
+

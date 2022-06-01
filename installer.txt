@@ -1,0 +1,33 @@
+#!/bin/bash
+############# Name : installer script for system_status.sh ###############
+#################### Version ######################
+# version 0.01 written by Sushant Goswami Dated 28-May-2019
+# Revision
+# Revision
+# Revision
+# Revision
+######################## Scope ######################
+# The script is intended to install system_status script in system.
+# The script also setup cronjob for system status
+##################### User Defined Variables #########################
+#
+############# Pre Fixed Variables ##############################
+#
+##################################
+if [ ! -d /usr/share/system_status ]; then
+mkdir -p /usr/share/system_status
+fi
+
+CRON_VALUE=`cat /var/spool/cron/root | grep "/usr/share/system_status/system_status.sh" | awk '{print $NF}' | head -1`
+
+if [ $CRON_VALUE != "/usr/share/system_status/system_status.sh" ]; then
+echo "*/5 * * * * /usr/share/system_status/system_status.sh" >> /var/spool/cron/root
+fi
+
+CURRENT_VERSION_NUMBER=`cat system_status.sh | grep Version_Number | awk '{print $3}'`
+INSTALLED_VERSION_NUMBER=`cat /usr/share/system_status/system_status.sh | grep Version_Number | awk '{print $3}'`
+
+if [ $(echo "$CURRENT_VERSION_NUMBER>$INSTALLED_VERSION_NUMBER"| bc) -eq 1 ]; then
+mv /usr/share/system_status/system_status.sh /usr/share/system_status/system_status.sh-$INSTALLED_VERSION_NUMBER
+cp system_status.sh /usr/share/system_status/
+fi

@@ -1,0 +1,87 @@
+# See smb.conf.example for a more detailed config file or
+# read the smb.conf manpage.
+# Run 'testparm' to verify the config is correct after
+# you modified it.
+
+
+
+
+[global]
+        workgroup = AM
+        netbios name = AMAZON
+        security = ADS
+        encrypt passwords = Yes
+        realm=AM.LILLY.COM
+        map to guest = Bad Password
+        max log size = 500000
+        log level = 2
+        log file = /var/log/samba/amazon/samba.%m
+        ## lm announce = True
+        local master = No
+        dns proxy = no
+        allow insecure wide links = Yes
+        name resolve order = host lmhosts wins bcast
+        #username map script = /bin/echo
+        bind interfaces only = yes
+        interfaces = ens192:0
+        pid directory = /var/run/samba2
+        lock directory = /var/cache/samba2
+        private dir = /etc/samba/private2
+        username map script = /bin/echo
+
+[homes]
+        comment = Home Directories
+        valid users = %S, %D%w%S
+        browseable = No
+        read only = No
+        inherit acls = Yes
+
+[public]
+        comment = /usr/public share
+        path = /usr/public
+        writeable = Yes
+        wide links = Yes
+
+[projects]
+        comment = PROJECTS
+        path = /bix/projects
+        read only = No
+        wide links = Yes
+
+[lipidbiomarker]
+        comment = LipidBiomarker
+        path = /bix/projects/LipidBiomarker
+        force group = bioinfo-unixgds
+        read only = No
+        create mask = 0664
+        directory mask = 02775
+        force directory mode = 0777
+        wide links = Yes
+
+
+[lrlbox]
+        comment = Megastorus NAS
+        path = /lrlbox
+        writeable = Yes
+        wide links = Yes
+
+[lrlvault]
+        comment = Megastorus NAS
+        path = /lrlvault
+        writeable = Yes
+        wide links = Yes
+
+[BioTDRms]
+    comment = BioTDRms
+    path = /lrlvault/data/BioTDRms
+    writeable = Yes
+    create mask = 664
+    directory mask = 2775
+
+[epl]
+    comment = Imaging epl
+    path = /lrlbox/data/imaging/epl
+    writeable = Yes
+    create mask = 664
+    directory mask = 2775
+    valid users = @epl

@@ -1,0 +1,22 @@
+[root@hague init.d]# cat centrifydc-samba2
+#!/bin/bash
+# chkconfig: 345 95 90
+# description: Second Samba Instance
+
+case "$1" in
+  start)
+    sleep 20
+    /usr/sbin/smbd -s /etc/samba/smb.conf.amazon
+    /usr/sbin/nmbd -s /etc/samba/smb.conf.amazon
+    /usr/sbin/winbindd -s /etc/samba/smb.conf.amazon
+    ;;
+  stop)
+    kill -9 `ps -ef | grep "/usr/sbin/smbd -s /etc/samba/smb.conf.amazon" | grep -v grep | awk '{print $2}'`
+    kill -9 `ps -ef | grep "/usr/sbin/nmbd -s /etc/samba/smb.conf.amazon" | grep -v grep | awk '{print $2}'`
+    kill -9 `ps -ef | grep "/usr/sbin/winbindd -s /etc/samba/smb.conf.amazon" | grep -v grep | awk '{print $2}'`
+    ;;
+  *)
+    echo "Usage: centrifydc-samba2 {start|stop|upgrade}"
+    exit 1
+esac
+exit 0

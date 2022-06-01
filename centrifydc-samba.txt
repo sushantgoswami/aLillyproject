@@ -1,0 +1,178 @@
+#!/bin/bash
+#
+# centrifydc-samba
+#
+# Redhat startup script for the Centrify Samba Interop Components.  Kick off as soon
+# as networking and syslog avaliable
+#
+# chkconfig: 2345 13 89
+# description: Centrify AD Bind Daemon
+# config: /etc/centrifydc/centrifydc.conf
+
+SAMBA_NAME="CentrifyDC-Samba"
+SMBD="smbd"
+NMBD="nmbd"
+WINBINDD="winbindd"
+ADBINDD="adbindd"
+SMBD_NAME="$SAMBA_NAME $SMBD"
+NMBD_NAME="$SAMBA_NAME $NMBD"
+WINBINDD_NAME="$SAMBA_NAME $WINBINDD"
+ADBINDD_NAME="$SAMBA_NAME $ADBINDD"
+WINBINDD_OPT="-s /etc/centrifydc/smb2.conf"
+CDC_CFG_FILE=/etc/centrifydc/centrifydc.conf
+ADINFO="/usr/bin/adinfo"
+
+SAMBA_SEARCH_DIRS=`awk '$1=="samba.base.path:" {print $2}' ${CDC_CFG_FILE} 2>/dev/null`
+: ${SAMBA_SEARCH_DIRS:=/opt/centrify/samba}
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+RETVAL=0
+
+# Set program environment
+# Parameter: program_name
+set_prog() {
+    case "$1" in
+        winbindd)
+            NAME=${WINBINDD_NAME}
+            DAEMON=${WINBINDD}
+            EXEC="${SAMBA_SEARCH_DIRS}/sbin/${DAEMON} ${WINBINDD_OPT}"
+            ;;
+
+        nmbd)
+            NAME=${NMBD_NAME}
+            DAEMON=${NMBD}
+            EXEC="${SAMBA_SEARCH_DIRS}/sbin/${DAEMON}"
+            ;;
+
+        smbd)
+            NAME=${SMBD_NAME}
+            DAEMON=${SMBD}
+            EXEC="${SAMBA_SEARCH_DIRS}/sbin/${DAEMON}"
+            ;;
+
+        adbindd)
+            NAME=${ADBINDD_NAME}
+            DAEMON=${ADBINDD}
+            EXEC="/usr/share/centrifydc/sbin/${DAEMON}"
+            ;;
+
+        *)
+            $ECHO "Invalid call to set_prog"
+            exit 1
+            ;;
+    esac
+
+    prog=$DAEMON
+    pidfile=/var/run/${DAEMON}.pid
+    lockfile=/var/lock/subsys/${DAEMON}.lock
+}
+
+#
+isJoined() {
+    # Returns SUCCESS if currently joined, and FAILURE if not.
+    $ADINFO --zone > /dev/null
+}
+
+start()
+{
+    set_prog $1
+    echo -n $"Starting $NAME: "
+    if ! isJoined; then
+        echo
+        echo -n "  Failed: machine is not joined."
+        failure "centrifydc-samba startup: not joined"
+        echo
+        return 2
+    fi
+
+    daemon $EXEC $OPTIONS
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && touch $lockfile
+    return $RETVAL
+}
+
+stop()
+{
+    set_prog $1
+    echo -n $"Stopping $NAME: "
+    killproc $DAEMON
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && rm -f $lockfile $pidfile
+}
+
+# Conditional daemon restart
+# Parameter: daemon_name
+cond_restart() {
+    set_prog $1
+    pid=`pidof $1`
+        if [ ! x"$pid" = x"" ]  ; then
+            stop $1
+            start $1
+            RETVAL=$?
+        fi
+}
+
+cmd=$1
+shift
+args="$*"
+OPTIONS="$OPTIONS $args"
+
+# See how we were called.
+case "$cmd" in
+    start)
+        start nmbd
+        start winbindd
+        start adbindd
+        start smbd
+        ;;
+
+    stop)
+        stop smbd
+        stop adbindd
+        stop winbindd
+        stop nmbd
+        ;;
+
+    status)
+        `which systemctl >/dev/null 2>&1`
+        RETVAL=$?
+        if [ $RETVAL = 0 ] ; then
+            systemctl status centrifydc-samba
+        else
+            status nmbd
+            status winbindd
+            status adbindd
+            status smbd
+        fi
+        RETVAL=$?
+        ;;
+
+    restart|reload)
+        stop smbd
+        stop adbindd
+        stop winbindd
+        stop nmbd
+
+        start nmbd
+        start winbindd
+        start adbindd
+        start smbd
+        ;;
+
+    condrestart)
+        cond_restart nmbd
+        cond_restart winbindd
+        cond_restart adbindd
+        cond_restart smbd
+        ;;
+
+    *)
+        echo $"Usage: $prog {start|stop|status|restart|condrestart|reload}"
+        exit 1
+esac
+
+exit $RETVAL

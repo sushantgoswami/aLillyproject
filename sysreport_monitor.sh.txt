@@ -1,0 +1,101 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+#- Original Author...: Sushant Goswami
+#- Creation Date.....: 21 feb 2020
+#- Purpose...........: Script is intended to find the system reports (unixrpt) which are not generated
+#- Notes.............: Creation of script via CHG1537786
+#-------------------------------------------------------------------------------
+#-            (C) Copyright 2018 Eli Lilly and Company
+#-                       All Rights Reserved
+#-------------------------------------------------------------------------------
+# description: sysreport_monitor.sh
+#-------------------------------------------------------------------------------                                     
+############### User defines Variables ##############
+
+VARDIR=/var
+LOGDIR=$VARDIR/log
+TMPDIR=/tmp
+SYSREPORT_DIR=/webdocs/guts/sysrpt
+SYSREPORT_CHK_DIR=/webdocs/guts/sysrpt_check
+SYSREPORT_SERVER=uxwebprd.am.lilly.com
+LOGFILE=sysreport_monitor.txt
+CURRENTDATE=`date | awk '{print $3"-"$2"-"$6}'`
+PRIMARY_EMAIL=tcs_platform_linux@lists.lilly.com
+SECONDARY_EMAIL=brundage_charlene@lilly.com
+MAIL_ENABLE=1
+
+######################################## Do not edit Below lines ##########################################
+DUPLICATE_INSTANCE=2
+DUPLICATE_INSTANCE=`ps -ef | grep sysreport_monitor.sh | grep -v grep | wc -l`
+if [ $DUPLICATE_INSTANCE -ge 3 ]; then
+ echo "(ERROR:MSG 000): Duplicate instance of sysreport_monitor.sh found on $SYSREPORT_SERVER, .. exiting." | mailx -s "$SYSREPORT_SERVER: duplicate intance found in sysrpt_check" -r reporter@$SYSREPORT_SERVER $PRIMARY_EMAIL
+ exit 0;
+fi
+################################################################################
+cat /dev/null > $TMPDIR/sysreport-server-passed-list-$CURRENTDATE.txt
+cat /dev/null > $TMPDIR/sysreport-server-failed-list-$CURRENTDATE.txt
+cat /dev/null > $TMPDIR/sysreport-server-unavailable-list-$CURRENTDATE.txt
+cat /dev/null > $TMPDIR/sysreport-server-list-$CURRENTDATE.txt
+DAY1=`date -d "today" '+%Y%m%d'`
+DAY2=`date -d "1 day ago" '+%Y%m%d'`
+DAY3=`date -d "2 day ago" '+%Y%m%d'`
+DAY1_DATE=$DAY1.html
+DAY2_DATE=$DAY2.html
+DAY3_DATE=$DAY3.html
+ls $SYSREPORT_DIR >> $TMPDIR/sysreport-server-list-$CURRENTDATE.txt
+
+if [ -d $SYSREPORT_DIR/$var1 ]; then
+for var1 in `cat $TMPDIR/sysreport-server-list-$CURRENTDATE.txt`
+ do
+  HOSTEXIST=`nslookup $var1 | tail -2 | awk '{print $NF}'`
+  if [ "$HOSTEXIST" != "NXDOMAIN" ]; then
+  COUNT=0
+  DAY1_FILE=`ls -ltr $SYSREPORT_DIR/$var1 | tail -1 | awk '{print $NF}'`
+  DAY2_FILE=`ls -ltr $SYSREPORT_DIR/$var1 | tail -2 | head -1 | awk '{print $NF}'`
+  DAY3_FILE=`ls -ltr $SYSREPORT_DIR/$var1 | tail -3 | head -1 | awk '{print $NF}'`
+
+  if [ ! -z $DAY1_FILE ]; then
+   if [ "$DAY1_DATE" == "$DAY1_FILE" ]; then
+    echo "$var1: Atleast one recent file found in the server"
+    COUNT=$(expr "$COUNT" + "1")
+   fi
+  fi
+
+  if [ ! -z $DAY2_FILE ]; then
+   if [ "$DAY2_DATE" == "$DAY1_FILE" ]; then
+    echo "$var1: Atleast one recent file found in the server"
+    COUNT=`expr '$COUNT'+1`
+   fi
+  fi
+
+  if [ ! -z $DAY3_FILE ]; then
+   if [ "$DAY3_DATE" == "$DAY1_FILE" ]; then
+    echo "$var1: Atleast one recent file found in the server"
+    COUNT=`expr '$COUNT'+1`
+   fi
+  fi
+
+  if [ $COUNT == "1" ]; then
+   echo "$var1: server is generating sysreport atleast one in last 3 days" >> $TMPDIR/sysreport-server-passed-list-$CURRENTDATE.txt
+  fi
+
+  if [ $COUNT == "0" ]; then
+   echo "$var1: server is not generating sysreport atleast for 3 days" >> $TMPDIR/sysreport-server-failed-list-$CURRENTDATE.txt
+  fi
+  else
+   echo "$var1: server is not a valid host" >> $TMPDIR/sysreport-server-unavailable-list-$CURRENTDATE.txt
+  fi
+ done
+fi
+
+######################################### Clean up #########################################
+mkdir -p $SYSREPORT_CHK_DIR/$CURRENTDATE
+mv $TMPDIR/sysreport-server-passed-list-$CURRENTDATE.txt $SYSREPORT_CHK_DIR/$CURRENTDATE
+mv $TMPDIR/sysreport-server-failed-list-$CURRENTDATE.txt $SYSREPORT_CHK_DIR/$CURRENTDATE
+mv $TMPDIR/sysreport-server-unavailable-list-$CURRENTDATE.txt $SYSREPORT_CHK_DIR/$CURRENTDATE
+cat /dev/null > $TMPDIR/sysreport-server-passed-list-$CURRENTDATE.txt
+cat /dev/null > $TMPDIR/sysreport-server-failed-list-$CURRENTDATE.txt
+cat /dev/null > $TMPDIR/sysreport-server-unavailable-list-$CURRENTDATE.txt
+cat /dev/null > $TMPDIR/sysreport-server-list-$CURRENTDATE.txt
+find $SYSREPORT_CHK_DIR -mtime +60 -exec rm -rf {} \;
+######################################### end of script #########################################

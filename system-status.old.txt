@@ -1,0 +1,63 @@
+#!/bin/bash
+############# Name : system_status.sh ###############
+#################### Version ######################
+# version 0.01 written by Sushant Goswami Dated 25-apr-2018
+# Revision
+# Revision
+# Revision
+# Revision
+######################## Scope ######################
+# The script is intended to check top 5 cpu and memory process, it also monitors the ram utilisation, it is needed to be set by cron
+##################### User Defined Variables #########################
+ZONE=ALL_ZONE
+PRIMARY_EMAIL=goswami_sushant@network.lilly.com
+SECONDARY_EMAIL=maheshwari_manish@network.lilly.com
+PRIMARY_MAIL_ENABLE=1
+SECONDARY_MAIL_ENABLE=1
+WORKDIR=/tmp
+LOGDIR=log
+LOGFILE=system_status.log
+############## Pre Fixed Variables ##############################
+SERVER_NAME=`hostname`
+CURRENTDATE=`date | awk '{print $3"-"$2"-"$6}'`
+CURRENTTIMESTAMP=`date | awk '{print $4}' | sed '$ s/:/./g'`
+CURRENT_HOUR=`date | awk '{print $4}' | awk -F ":" '{print $1$2}'`
+###################### Help Menu ##########################################
+if [ -z $1 ]; then
+ echo "(MSG 000): No arguments passed, continuing to regular task" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+else
+ if [ $1 == "-help" ]; then
+  echo "(MSG HELP): The script is intended to check top 5 cpu and memory process, it also monitors the ram utilisation, it is needed to be set by cron"
+  exit 0;
+ fi
+fi
+##########################################################################
+DUPLICATE_INSTANCE=2
+DUPLICATE_INSTANCE=`ps -ef | grep system_status.sh | grep -v grep | wc -l`
+if [ $DUPLICATE_INSTANCE -ge 3 ]; then
+ echo "(MSG 004): Duplicate instance found, .. exiting." | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+ exit 0;
+fi
+#################### Do not edit below this line, use variables above ###########################################
+echo "(MSG 001): Below top 5 CPU process" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+echo "USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+ps aux | sort -k 3 -rn | head -5 | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+echo "(MSG 002): Below top 5 MEMORY process" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+echo "USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+ps aux | sort -k 4 -rn | head -5 | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+echo "(MSG 003): Below is free command output" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+free | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+echo "(MSG 003): Below is the Fetched D state processes" | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+ps aux | grep " D " | grep -v grep | sed -e "s/^/$(date | awk '{print $3"-"$2"-"$6"-"$4}') /" >> $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+#################### Mailing report ####################
+if [ $CURRENT_HOUR == 0225 ]; then
+if [ $PRIMARY_MAIL_ENABLE == 1 ]; then
+ echo "Performance report on $SERVER_NAME" | mailx -s "Performance report on $SERVER_NAME" -r reporter@$SERVER_NAME.am.lilly.com -a $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt $PRIMARY_EMAIL
+fi
+if [ $SECONDARY_MAIL_ENABLE == 1 ]; then
+ echo "Performance report on $SERVER_NAME" | mailx -s "Performance report on $SERVER_NAME" -r reporter@$SERVER_NAME.am.lilly.com -a $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt $SECONDARY_EMAIL
+fi
+rm -rf $WORKDIR/$LOGDIR/$LOGFILE-$CURRENTDATE.txt
+fi
+#################### Do not edit above this line, use variables above ###########################################
+

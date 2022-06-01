@@ -1,0 +1,32 @@
+#!/bin/bash
+#-------------------------------------------------------------------------------
+#- Original Author...: Sushant Goswami
+#- Creation Date.....: 22 Apr 2019
+#- Purpose...........: For starting sprime services	
+#-------------------------------------------------------------------------------
+#-            (C) Copyright 2019 Eli Lilly and Company
+#-                       All Rights Reserved
+#-------------------------------------------------------------------------------
+#- The next two lines are used by the chkconfig utility on Linux systems, and
+#- are ignored on Sun systems.
+# chkconfig: 35 50 01
+# description: sprimeservice
+
+                                                                                      
+                                                             
+case "$1" in
+  start)
+    echo "Starting sprime services" >> /var/log/messages
+    su - sprime -c "/bin/bash /lrlhps/apps/sprime/scripts/startupIndividualService.sh"
+    ;;
+  stop)
+    echo "Stopping sprime services" >> /var/log/messages
+    su - sprime -c "/bin/bash /lrlhps/apps/sprime/scripts/stopIndividualService.sh"
+    ;;
+  *)
+    echo "Usage: startup script sprime services {start|stop}"
+    exit 1
+esac
+                                                                                              
+exit 0
+

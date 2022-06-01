@@ -1,0 +1,31 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------
+#- Original Author...: Sushant Goswami
+#- Creation Date.....: 08 apr 2020
+#- Purpose...........: For starting etxsvr services	
+#-------------------------------------------------------------------------------
+#-            (C) Copyright 2018 Eli Lilly and Company
+#-                       All Rights Reserved
+#-------------------------------------------------------------------------------
+#- The next two lines are used by the chkconfig utility on Linux systems, and
+#- are ignored on Sun systems.
+# chkconfig: 35 99 01
+# description: etxsvr_service
+                                                                                          
+                                                             
+case "$1" in
+  start)
+    echo "Starting etxsvr"
+    /opt/etxsvr/etxsvr-12.0/bin/etxsvr start
+    ;;
+  stop)
+    echo "Stopping etxsvr"
+    /opt/etxsvr/etxsvr-12.0/bin/etxsvr stop
+    ;;
+  *)
+    echo "Usage: etxsvr server ykrhetxdb02 script {start|stop}"
+    exit 1
+esac
+                                                                                              
+exit 0
+

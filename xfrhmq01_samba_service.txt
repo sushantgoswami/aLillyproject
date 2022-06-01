@@ -1,0 +1,31 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------
+#- Original Author...: Sushant Goswami
+#- Creation Date.....: 03 Apr 2020
+#- Purpose...........: For starting samba mount service in XFRHMQ01
+#-------------------------------------------------------------------------------
+#-            (C) Copyright 2018 Eli Lilly and Company
+#-                       All Rights Reserved
+#-------------------------------------------------------------------------------
+#- The next two lines are used by the chkconfig utility on Linux systems, and
+#- are ignored on Sun systems.
+# chkconfig: 35 50 01
+# description: xfrhmq01_samba_mount
+                                                                                          
+                                                             
+case "$1" in
+  start)
+    echo "mount smb share of xfsvr02"
+    mount.cifs //xfsvr02.ema.lilly.com/servizi/HSEXML.GQA/OUTBOUND /SERVIZI/HSEXML.GQA/OUTBOUND -o credentials=/etc/MQ-credentials
+    ;;
+  stop)
+    echo "unmounting smb share of xfsvr02"
+    umount /SERVIZI/HSEXML.GQA/OUTBOUND
+    ;;
+  *)
+    echo "Usage: mount unmount of xfsvr02 samba share {start|stop}"
+    exit 1
+esac
+                                                                                              
+exit 0
+

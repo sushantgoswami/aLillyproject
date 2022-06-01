@@ -1,0 +1,32 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------
+#- Original Author...: Sushant Goswami
+#- Creation Date.....: 21 Jan 2019
+#- Purpose...........: For starting samba services in hague server	
+#-------------------------------------------------------------------------------
+#-            (C) Copyright 2018 Eli Lilly and Company
+#-                       All Rights Reserved
+#-------------------------------------------------------------------------------
+#- The next two lines are used by the chkconfig utility on Linux systems, and
+#- are ignored on Sun systems.
+# chkconfig: 35 50 01
+# description: custom_samba
+                                                                                          
+                                                             
+case "$1" in
+  start)
+    echo "Starting custom samba"
+    /usr/sbin/smbd --foreground --no-process-group -D -s /etc/samba/smb.conf.hague -l /var/log/samba/hague -d 10
+    /usr/sbin/smbd --foreground --no-process-group -D -s /etc/samba/smb.conf.amazon -l /var/log/samba/amazon    
+    ;;
+  stop)
+    echo "Stopping custom samba"
+    kill -9 `ps -ef | grep smbd | grep -v grep | awk '{print $2}'`
+    ;;
+  *)
+    echo "Usage: httpd server WHO script {start|stop}"
+    exit 1
+esac
+                                                                                              
+exit 0
+

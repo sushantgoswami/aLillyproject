@@ -1,0 +1,282 @@
+#!/bin/bash
+##################################################
+# Description: Installs, patches, and configures JBoss 7.x EAP in domain mode
+#
+# This script is designed to be called one directory higher than it is placed
+#   in the repository.
+# Author: Dustin Jefford
+##################################################
+## this use to include all variables
+source ./utilities 
+## this is used to include all functions
+source ./parameters 
+#------------------------------
+# Set master or secondary node installation ## this is to set only secondary_node=true/false
+case "$1" in
+  secondary )
+    secondary_node="true"
+  ;;
+  * )
+    secondary_node="false"
+  ;;
+esac
+#------------------------------
+## this line only print ==================================================
+print_divider
+print_line "Starting JBoss 7.x EAP Installation in domain mode"
+print_divider ; sleep 2
+
+print_line "Start: Gathering user input" ; sleep 2
+#------------------------------
+## this 4 lines takes variable java_jks_pass, vault_jks_pass, ldap_bind_pass, ldap_secondary_pass
+# Begin User input gathering
+read -s -p " Default WHO password for java keystore: "  java_jks_pass ; print_line
+read -s -p " Default WHO password for vault keystore: " vault_jks_pass ; print_line
+read -s -p " Password for LDAP Bind account: " ldap_bind_pass ; print_line
+read -s -p " Password for LDAP secondary account: " ldap_secondary_pass ; print_line
+# End User input
+
+print_line "Finish: Gathering user input"
+#------------------------------
+print_divider
+print_line "Start: Verifying directories" ; sleep 2
+#------------------------------
+## the home directories being checked, the variable are in utilities and function are in parameters, 
+## if the directory does not exist then it will create those.
+create_dir "${JBOSS_HOME}"
+create_dir "${LOGS_DIR}/jboss7"
+create_dir "${WHO_HOME}/tmp"
+
+print_line "Finish: Verifying directories"
+#------------------------------
+print_divider
+print_line "Start: Unpacking JBoss Media" ; sleep 2
+#------------------------------
+
+mkdir -p ./working/jbmedia
+
+## extrating jboss-eap-7.0.0.zip in ./working/jbmedia
+
+extract_zip_media $JBOSS_MEDIA ./working/jbmedia
+
+## move ./working/jbmedia to /usr/lib/jvm/java-1.8.0-openjdk
+## make variable rc = exit tatus, possibly 0 if moved properly
+
+# Move unpacked directory to JBOSS_HOME
+mv ./working/jbmedia $JBOSS_HOME ; rc=$?
+rc_eval "${rc}" "I: Successfully moved media to ${JBOSS_HOME}" \
+  "E: Failed to move media to ${JBOSS_HOME}"
+
+print_line "Finish: Unpacking JBoss Media"
+#------------------------------
+
+## if these files are in the directory "./jboss-eap-7.0.6-patch.zip" "./jboss-eap-7.0.7-patch.zip" "./jboss-eap-7.0.8-patch.zip" "./jboss-eap-7.0.9-patch.zip"
+
+# If patch files are listed, then install patch
+if [ ${#JBOSS_PATCH_LIST[@]} -gt 0 ]; then
+  print_divider
+  print_line "Start patching:"
+  for patch in ${JBOSS_PATCH_LIST[@]} ; do
+    apply_patch $patch
+  done
+fi
+#------------------------------
+
+print_divider
+print_line "Start: Verifying and placing SSL keystore files" ; sleep 2
+
+## verify jks files
+
+verify_loc "./ssl/keystore.jks"
+verify_loc "./ssl/vault.jks"
+verify_loc "./ssl/truststore.jks"
+
+#------------------------------
+
+## copy the ssl directory to /usr/lib/jvm/java-1.8.0-openjdk
+
+cp -r "./ssl" "${JBOSS_HOME}/" ; rc=$?
+rc_eval "${rc}" "I: Successfully moved SSL keystores to ${JBOSS_HOME}" \
+  "E: Failed to move SSL keystores to ${JBOSS_HOME}"
+
+print_line "Finish: Placing SSL keystore files"
+#------------------------------
+
+#TODO(djefford) Do we want to automatically change keystore passwords? Otherwise,
+# installers will need to change the passwords manually after installation.
+
+
+print_divider
+print_line "Start: Configuring Vault and store secrets" ; sleep 2
+
+
+vault_add_item $vault_jks_pass javaKeystorePwd javaKeystore $java_jks_pass
+vault_add_item $vault_jks_pass ldapAuthPwd ldapAuth $ldap_bind_pass
+
+if [ -z "$ldap_secondary_pass" ]; then
+  print_line "I: No secondary password detected, skipping"
+else
+  vault_add_item $vault_jks_pass secondaryNodeAcctPwd secondaryNodeAcct $ldap_secondary_pass
+fi
+
+print_line "Finished: Configuring Vault"
+
+print_divider
+print_line "Start: Capture masked vault password" ; sleep 2
+
+# Grab masked password for vault for later use
+vault_mask_pass=`vault_add_item $vault_jks_pass vaultAuthPwd vaultAuth $vault_jks_pass \
+  | grep -o "\"MASK-.*\""`
+
+# Remove beginning and trailing "
+vault_mask_pass=$(sed -e 's/^"//' -e 's/"$//' <<<"$vault_mask_pass")
+
+print_line "Finish: Captured masked vault password"
+
+print_divider
+print_line "Start: Replacing Variables in templates" ; sleep 2
+
+# Gather short hostname for default JVM name
+short_hostname=$(sed -e 's/\..*//' <<<"$HOSTNAME")
+
+# Check for optional IP, if none, try to determine IP address
+if [ -z "${OPT_IP}" ]; then
+  ip_addr=$(sed -e 's/ $//' <<<"$(hostname -I)")
+else
+  ip_addr="${OPT_IP}"
+fi
+
+cp -r domain/templates ./working
+mv ./working/templates ./working/jbtemplates
+
+for file in `ls ./working/jbtemplates`; do
+  file_loc="./working/jbtemplates/$file"
+  print_line "Updating ${file_loc}..."
+
+  replace_var "{{JBOSS_HOME}}" "$JBOSS_HOME" "$file_loc"
+  replace_var "{{JAVA_HOME}}" "$JAVA_HOME" "$file_loc"
+  replace_var "{{LOGS_DIR}}" "${LOGS_DIR}" "$file_loc"
+  replace_var "{{HOSTNAME}}" "$HOSTNAME" "$file_loc"
+  replace_var "{{SMTP_SERVER}}" "$SMTP_SERVER" "$file_loc"
+  replace_var "{{JBOSS_USER}}" "$JBOSS_USER" "$file_loc"
+  replace_var "{{ADMIN_GROUP}}" "$ADMIN_GROUP" "$file_loc"
+  replace_var "{{WHO_HOME}}" "$WHO_HOME" "$file_loc"
+  replace_var "{{ADMIN_USER}}" "$ADMIN_USER" "$file_loc"
+
+  replace_var "{{SHORT_HOSTNAME}}" "$short_hostname" "$file_loc"
+  replace_var "{{IP_ADDR}}" "$ip_addr" "$file_loc"
+
+  replace_var "{{MASTER_HOSTNAME}}" "$MASTER_HOSTNAME" "$file_loc"
+  replace_var "{{SECONDARY_ACCT}}" "$SECONDARY_ACCT" "$file_loc"
+
+  replace_var "{{LDAP_URL}}" "$LDAP_URL" "$file_loc"
+  replace_var "{{LDAP_ADMIN_GROUP}}" "$LDAP_ADMIN_GROUP" "$file_loc"
+  replace_var "{{LDAP_ADMIN_GROUP_DN}}" "$LDAP_ADMIN_GROUP_DN" "$file_loc"
+  replace_var "{{LDAP_BIND_DN}}" "$LDAP_BIND_DN" "$file_loc"
+  replace_var "{{LDAP_NAME_ATTRIBUTE}}" "$LDAP_NAME_ATTRIBUTE" "$file_loc"
+  replace_var "{{LDAP_BASE_DN}}" "$LDAP_BASE_DN" "$file_loc"
+
+  replace_var "{{VAULT_ENC_FILE_DIR}}" "$VAULT_ENC_FILE_DIR" "$file_loc"
+  replace_var "{{VAULT_SALT}}" "$VAULT_SALT" "$file_loc"
+  replace_var "{{VAULT_ITERATION_COUNT}}" "$VAULT_ITERATION_COUNT" "$file_loc"
+  replace_var "{{VAULT_ALIAS}}" "$VAULT_ALIAS" "$file_loc"
+  replace_var "{{VAULT_KEYSTORE}}" "$VAULT_KEYSTORE" "$file_loc"
+
+  replace_var "{{VAULT_MASKED_PASSWORD}}" "$vault_mask_pass" "$file_loc"
+
+done
+
+print_line "Finish: Variable replacement"
+
+print_divider
+print_line "Start: Placing start-up scripts" ; sleep 2
+
+mkdir -p ${JBOSS_HOME}/conf/domain
+mkdir -p ${WHO_HOME}/scripts
+
+cp ./working/jbtemplates/jboss.conf ${JBOSS_HOME}/conf/domain
+cp ./working/jbtemplates/jboss-domain.service ${WHO_HOME}/scripts
+cp ./working/jbtemplates/jboss-cli-logging.properties ${JBOSS_HOME}/bin
+
+print_line "Finish: Placing start-up scripts"
+
+print_divider
+print_line "Start: Updating permissions" ; sleep 2
+
+mkdir -p ${WHO_HOME}/crontabs
+
+cp ./working/jbtemplates/jboss7Perms.sh ${WHO_HOME}/crontabs/
+
+${WHO_HOME}/crontabs/jboss7Perms.sh ; rc=$?
+
+rc_eval "${rc}" "I: Successfully updated permissions" \
+  "E: Permissions updates failed"
+
+print_line "Finish: Updating permissions"
+
+print_divider
+print_line "Start: Starting JBoss" ; sleep 2
+
+start_stop_domain start
+print_line "Waiting for start-up to complete (15 seconds)" ; sleep 15
+
+print_line "Finish: Starting JBoss"
+
+print_divider
+print_line "Start: Standard configuration of domain install"
+
+execute_cli_command ${ip_addr} "/server-group=main-server-group:stop-servers"
+execute_cli_command ${ip_addr} "/server-group=other-server-group:stop-servers"
+execute_cli_script ${ip_addr} ./working/jbtemplates/domain-general.cli
+
+print_line "Finish: Standard configuration of domain install"
+
+if [[ "${secondary_node}" = "true" ]]; then
+  print_divider
+  print_line "Start: Secondary node configuration"
+
+  execute_cli_script ${ip_addr} ./working/jbtemplates/secondary-general.cli
+
+  print_line "Finish: Secondary node configuration"
+fi
+
+print_divider
+print_line "Start: Updating JBoss node name to ${short_hostname}"
+
+execute_cli_command ${ip_addr} "/host=master:write-attribute(name=name,value=\"$short_hostname\")"
+
+print_line "Finish: Updating JBoss node name to ${short_hostname}"
+
+print_divider
+print_line "Start: Stopping JBoss." ; sleep 2
+
+start_stop_domain stop
+
+print_line "Placing custom jboss-cli.xml script"
+cp ./working/jbtemplates/jboss-cli.xml ${JBOSS_HOME}/bin/
+
+print_line "Finish: Stopping JBoss."
+
+print_divider
+print_line "Start: Updating permissions and clean-up" ; sleep 2
+
+${WHO_HOME}/crontabs/jboss7Perms.sh ; rc=$?
+rc_eval "${rc}" "I: Successfully updated permissions" \
+  "E: Permissions updates failed"
+
+rm -r ${LOGS_DIR}/jboss7/server-one ; rc=$?
+rc_eval "${rc}" "I: Successfully removed old log directory for server-one." \
+  "E: Clean-up of old directory for server-one failed."
+
+rm -r ${LOGS_DIR}/jboss7/server-two ; rc=$?
+rc_eval "${rc}" "I: Successfully removed old log directory for server-two." \
+  "E: Clean-up of old directory for server-two failed."
+
+print_line "Finish: Updating permissions and clean-up"
+
+print_divider
+
+print_line "JBoss 7.x EAP Installation completed in domain mode"
+
+print_divider
+print_divider

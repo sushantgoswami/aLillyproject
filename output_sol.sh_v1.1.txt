@@ -1,0 +1,178 @@
+### Solaris cofiguration output ###
+### Written by Sushant dated 03Jan2014 ###
+#!/usr/bin/ksh
+
+CURRENTDATE=`date | awk '{print $2$3$4}'`
+CURRENTHOST=`uname -a | awk '{print $2}'`
+EMAIL_ID=TCS_Platform_Linux@lists.lilly.com
+
+cat > sol_output.sh << EOF
+
+PATH=$PATH:/opt/VRTS/bin:/opt/VRTSvcs/bin:/usr/bin:/usr/local/bin:/usr/sbin:/usr/local/sbin:/etc/vx/bin
+TMOUT=0
+echo "==================Solaris Release ==========="
+cat /etc/release
+echo "  ================  uptime  ================ "
+uptime
+echo "  ================ df -k ================ "
+df -k
+echo " ================  df -k | wc -l ================ "
+df -k | wc -l
+echo "===============modinfo ========================"
+modinfo
+echo "  ================  uname -a  ================ "
+uname -a
+echo "  ================  eeprom  ================ "
+eeprom
+echo "  ================ prtconf  ================ "
+prtconf
+echo "  ================ vmstat  ================ "
+vmstat 1 10
+echo "  ================ iostat -en  ================ "
+iostat -en
+echo "  ================ iostat -En  ================ "
+iostat -En
+echo "  ================ iostat -Xn  ================ "
+iostat -Xn
+echo "  ================ mpstat  ================ "
+mpstat 1 5
+echo "  ================ fsstat  ================ "
+fsstat / 1 5
+echo "  ================  swap  ================ "
+swap -l
+echo "  ================ fdisk -l  ================ "
+#echo | format
+echo "  ================ ps -ef ================ "
+ps -ef
+echo "  ================ ifconfig -a  ================ "
+ifconfig -a
+echo "  ================ route -rn ================ "
+netstat -rn
+echo "==================== netstat -an ============="
+netstat -an
+echo "  ================  cat /etc/vfstab ================  "
+cat /etc/vfstab
+echo "  ================ cat /etc/mnttab ================  "
+cat /etc/mnttab
+echo "  ================ cat /etc/resolv.conf ================  "
+cat /etc/resolv.conf
+echo "  ================ cat /etc/nsswitch.conf  ================  "
+cat /etc/nsswitch.conf
+echo "  ================ cat /etc/hosts  ================ "
+cat /etc/hosts
+echo "  ================ cat /etc/passwd ================ "
+cat /etc/passwd
+echo "  ================ cat /etc/shadow  ================ "
+cat /etc/shadow
+echo "  ================ cat /etc/group  ================ "
+cat /etc/group
+echo "  ================ cat /etc/auto_master  ================ "
+cat /etc/auto_master
+echo "===================== cat /etc/path_to_inst======================"
+cat /etc/path_to_inst
+echo "=========================== cat /etc/name_to_major ================"
+cat /etc/name_to_major
+echo "=========================== cat /etc/system ================"
+cat /etc/system
+echo "  ================ ps -eaf | grep -i smon ================ "
+ps -eaf | grep -i smon
+echo "  ================ ps -eaf | grep -i pmon  ================ "
+ps -eaf | grep -i pmon
+echo "  ================ ps -eaf | grep -i dataserv  ================ "
+ps -eaf | grep -i dataserv
+echo "  ================ showmount -e  ================ "
+showmount -e
+echo " ================ prtdiag =============="
+prtdiag -v
+echo " ================ metatstat ================"
+metastat
+echo " ================ metastat -p ================"
+metastat -p
+echo " ================ metadb -i ================"
+metadb -i
+echo " ================ metadb -ac ================"
+metastat -ac
+echo " ================ ps -eaf | grep -i nfs ================"
+ps -eaf | grep -i nfs
+echo " ================ ps -eaf | grep -i nis ================ "
+ps -eaf | grep -i nis
+echo "  ================ mount  ================ "
+mount -v
+echo "=========================luxadm============================"
+luxadm -e port
+echo "================= network config ======================"
+cd /etc
+cat hostname.*
+
+LLT_VERSION=`modinfo | grep llt | awk '{print $6}'`
+if [ $LLT_VERSION == "llt" ]; then
+echo "====================Veritas Version========================"
+modinfo || grep -i vx
+echo "====================/etc/llttab========================"
+cat /etc/llttab
+echo "====================/etc/llthosts========================"
+cat /etc/llthosts
+echo "=====================/etc/gabtab======================="
+cat /etc/gabtab
+echo "=====================/etc/vxfendg======================="
+cat /etc/vxfendg
+echo "=====================/etc/vxfenmode======================="
+cat /etc/vxfenmode
+echo "==================/etc/vxfentab=========================="
+cat /etc/vxfentab
+echo"=====================gabconfig============================="
+gabconfig -a
+echo"====================lltstat=============================="
+lltstat -nvv
+fi
+
+VX_VERSION=`modinfo | grep vxfs | awk '{print $6}'`
+if [ $VX_VERSION == "vxfs" ]; then
+echo "================ vxdisk list ================"
+/opt/VRTS/bin/vxdisk -o alldgs list
+echo "================ vxdg list ================"
+/opt/VRTS/bin/vxdg list
+echo "================ vxdisk native list================"
+/opt/VRTS/bin/vxdisk -e list
+echo "================ vxprint al disk================"
+/opt/VRTS/bin/vxprint -ht
+echo "================ vxdmpadm list================"
+/opt/VRTS/bin/vxdmpadm listenclosure all
+echo "================ vxdmpadm list================"
+/opt/VRTS/bin/vxdmpadm listctlr all
+echo "================= vxprint ======================"
+/opt/VRTS/bin/vxprint -ht
+echo "================= powerpath  ======================"
+powermt display dev=all
+echo "================= vxlicrep======================"
+/opt/VRTS/bin/vxlicrep
+fi
+
+OS_VERSION=`uname -a | awk '{print $3}'`
+if [ $OS_VERSION == "5.9" ]; then
+echo "================= zone config ======================"
+zoneadm list -cv
+echo "================= system config ======================"
+cat /etc/system
+echo "================= zones config ======================"
+cd /etc/zones
+cat *
+echo "================= svcs config ======================"
+svcs -a
+echo "================= svcs -xv ======================"
+svcs -xv
+echo "=========================cfgadm============================"
+cfgadm -al
+echo "=========================prtconf============================"
+prtconf -vp
+echo "=========================fcinfo============================"
+fcinfo hba-port
+echo "=========================fmadm====================="
+fmadm faulty
+fmdump -v
+fi
+
+EOF
+
+/usr/bin/sh sol_output.sh >> output-$CURRENTHOST-$CURRENTDATE.doc 2>&1
+uuencode output-$CURRENTHOST-$CURRENTDATE.doc output-$CURRENTHOST-$CURRENTDATE.doc | mailx -s output-$CURRENTHOST-$CURRENTDATE.doc $EMAIL_ID

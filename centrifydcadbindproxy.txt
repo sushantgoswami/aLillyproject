@@ -1,0 +1,2 @@
+#!/bin/bash
+echo -e "/usr\n\n\n\n\n\n\n"|/usr/share/centrifydc/bin/adbindproxy.pl 2> /dev/null > /tmp/log

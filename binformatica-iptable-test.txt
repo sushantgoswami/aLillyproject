@@ -1,0 +1,37 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------
+#- Original Author...: Sushant Goswami
+#- Creation Date.....: 25 June 2018
+#- Purpose...........: For testing iptables	
+#- Notes.............: Creation of script via CHG1290158
+#-------------------------------------------------------------------------------
+#-            (C) Copyright 2018 Eli Lilly and Company
+#-                       All Rights Reserved
+#-------------------------------------------------------------------------------
+#- The next two lines are used by the chkconfig utility on Linux systems, and
+#- are ignored on Sun systems.
+# chkconfig: 35 50 01
+# description: binformatica-iptable-test script
+                                                                                          
+                                                             
+case "$1" in
+  start)
+    echo "Starting binformatica-iptable-test script"
+    #iptables -A INPUT -s diainfqar01.am.lilly.com -j DROP
+	#iptables -A OUTPUT -d diainfqar01.am.lilly.com -j DROP
+	#iptables -A INPUT -s diainfqar02.am.lilly.com -j DROP
+	#iptables -A OUTPUT -d diainfqar02.am.lilly.com -j DROP
+	#iptables -A INPUT -s diainfqar03.am.lilly.com -j DROP
+	#iptables -A OUTPUT -d diainfqar03.am.lilly.com -j DROP
+    ;;
+  stop)
+    echo "Stopping binformatica-iptable-test script"
+    iptables -F
+    ;;
+  *)
+    echo "Usage: binformatica-iptable-test script {start|stop}"
+    exit 1
+esac
+                                                                                              
+exit 0
+

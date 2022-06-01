@@ -1,0 +1,67 @@
+#!/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+#
+#****************************************************************************************
+# This file:  chownm2c.sh
+#
+# This script is used by M2C to change the ownership of a file in the CLUWE repository.
+#
+# This script is executed by the Job Runner component of the M2C system which is running
+# as one of the following users based on the environment: cluwem2c, cluwem2cq or cluwem2cd
+#
+# Note: Parameters
+# $1 = The user account name which is to become the new owner of the file
+# $2 = The full path to the file that is to be modified so that the new owner is $1
+#
+# Note that $2 must start with either /lillyce, /lillyce-qa, or /lillyce-dev
+#
+# INPUT:
+#              None
+# OUTPUT:
+#              None
+# ASSOCIATED:
+#              CLUWE repository mounted at /lillyce, /lillyce-qa, or /lillyce-dev.
+#
+#****************************************************************************************
+# REVISION HISTORY:
+# Change Date           Name             Changes Made
+#
+#****************************************************************************************
+#  01/22/2016           Mark Brubaker    Initial creation.
+#  01/25/2016           Keith Southwood  Added PATH statement to meet
+#                       requirments of CHG0079195
+#  02/19/2016           Keith Southwood  Update to allow file names with spaces
+#                       CHG0087457
+#
+# Check for the correct number of parameters
+if [ $# -ne 2 ] ;
+  then
+    echo "Incorrect number of arguments supplied."
+    echo "Usage: $0 <userid> <file>"
+    exit 1
+fi
+
+userId="$1"
+filename="$2"
+echo userId = ${userId}
+echo filename = ${filename}
+
+# Make sure userId is not root
+if [ ${userId} == "root" ] || [ ${userId} == "0" ] ;
+  then
+    echo "Ownership may not be changed to root."
+        exit 1
+fi
+
+# Check for valid file location
+if [ ${filename:0:9} != "/lillyce/" ] && [ ${filename:0:12} != "/lillyce-qa/" ] && [ ${filename:0:13} != "/lillyce-dev/" ] ;
+  then
+    echo "Incorrect file location.  File path must start with /lillyce, /lillyce-qa, or /lillyce-dev"
+    exit 1
+fi
+
+echo "** Executing command: /bin/chown ${userId} \"${filename}\""
+/bin/chown ${userId} "${filename}"
+exitStatus=$?
+echo "** Execution complete.  Exit Status = ${exitStatus}"
+exit ${exitStatus}
