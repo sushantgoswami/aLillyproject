@@ -1,0 +1,36 @@
+The lvmtab files should be having the VG00 entries and hope that they do.
+
+To answer your questions.
+
+a) Is there any way other than a vgscan to rebuild this information?
+
+though vgscan is the easiest way, we do have the vgimport command to help rebuild the lvmtab file with entries for that particular vg. I would suggest the following be done
+
+Collect the information about the vg's and pv's
+
+# vgscan -p -v
+Here we do a vgscan in preview mode, this helps to determine if the system is able to identify the disks to the volume groups.
+
+or
+
+# vgcfgrestore -l -f /etc/lvmconf/ should also help if it is the latest one and regularly updated.
+
+Once you ascertain which are the disks that belong to the volume group
+
+# cp -P /etc/lvmtab /etc/lvmtab. for backup
+# mkdir /dev/vgname
+# mknod /dev/vgname/group c 64 0xXX0000
+where XX is teh minor number of the group
+
+# vgimport -p -v /dev/vgname
+The above command does the import in preview mode so taht you can correct any issues/errors. Once you clear all the errors
+
+# vgimport -v /dev/vgname
+
+
+
+b) Also, does it matter if minor number used in the mknod does not match the original minor used?
+
+No it does not matter, however recommended.
+
+regards

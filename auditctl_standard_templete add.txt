@@ -1,0 +1,38 @@
+GBIP = NO
+SUMMARY = auditctl rule on Vmware machine (standard CHG)
+
+======================================================================= 
+WORKPLAN 1.0 for storage migration or storage uplift
+======================================================================== 
+
+SA will follow guidelines of standard CR.
+SA will follow UNIX-OSI-013 (FS mgmt) and do the following.
+SA will follow UNIX-OSI-014 (VM Mgmt)and execute the following.
+SA will follow UNIX-SOP-400 (security)and execute the following.
+
+SA will use following commands
+
+auditctl
+vi
+
+Verification:
+-------------------
+Customer will verify.
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.
+Backout time: ~30 min.configuration

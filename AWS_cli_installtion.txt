@@ -1,0 +1,48 @@
+Change Summary: Install below packages
+
+Server: awsrsadmin
+
+Operating System: Red Hat Enterprise Linux Server release 7.5 (Maipo)
+
+Environment: prod(p)
+
+Linux awsrsadmin 3.10.0-862.11.6.el7.x86_64 #1 SMP Fri Aug 10 16:55:11 UTC 2018 x86_64 x86_64 x86_64 GNU/Linux
+
+ 22:13:14 up 1 day, 10:25,  1 user,  load average: 0.01, 0.03, 0.05
+
+Wed Oct 10 22:13:14 EDT 2018
+
+
+
+Pre-Work:
+[root@awsrsadmin ~]# rpm -qa | egrep 'mailx|zip|botocore|boto3|pg8000|shortuuid|pgpasslib|pip|virtualenv|locate|awscli|postgresql'
+unzip-6.0-19.el7.x86_64
+bzip2-1.0.6-13.el7.x86_64
+bzip2-libs-1.0.6-13.el7.x86_64
+mailx-12.5-19.el7.x86_64
+libzip-0.10.1-8.el7.x86_64
+libpipeline-1.2.3-3.el7.x86_64
+perl-Compress-Raw-Bzip2-2.061-3.el7.x86_64
+python-virtualenv-15.1.0-2.el7.noarch
+zip-3.0-11.el7.x86_64
+mlocate-0.26-8.el7.x86_64
+libreport-plugin-mailx-2.1.11-40.el7.x86_64
+gzip-1.5-10.el7.x86_64
+[root@awsrsadmin ~]#
+
+
+Implementation Plan: I will install following rpm/modules
+postgresql (psql client)
+               postgresql96-libs-9.6.10-1PGDG.rhel7.x86_64
+               postgresql96-9.6.10-1PGDG.rhel7.x86_64
+
+awscli
+               awscli-1.11.133-1.el7.noarch
+locate
+virtualenv
+pip
+pgpasslib
+shortuuid 
+pg8000 
+boto3
+botocore

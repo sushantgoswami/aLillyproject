@@ -1,0 +1,12 @@
+memlock user limit set in /etc/security/limits.conf file:
+
+*   soft   memlock    54525952
+*   hard   memlock    54525952
+
+
+set the vm.nr_hugepages parameter in /etc/sysctl.conf file:
+
+vm.nr_hugepages = 16000
+
+DBA team also need to execute one CR# CS04172127  in between. 
+co-ordinate with DBA team before restarting the server.

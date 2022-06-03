@@ -1,0 +1,47 @@
+====================================================================== 
+WORKPLAN 1.0 for storage migration VxVM
+======================================================================== 
+
+SA will follow UNIX-OSI-013 and do the following.
+SA will raise child CR to GSMO-SAN team for SAN devices
+
+SA will scan luns in VXVM
+
+vxdctl enable
+
+SA will label and setup in VXVM
+
+vxdisksetup -i <diskname>
+
+SA will mirror the volumes 
+
+vxassist -b -g <dgname> mirror <volume> enclr:<enclosure>
+
+After mirror SA will break the mirror
+
+vxplex -g <dgname> -o rm dis <plex name>
+
+SA will remove disk from DG and remove it from VXVM
+
+Verification:
+-------------------
+
+Customer will verify by df -h.
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.( will change configuration to previous state)
+Backout time: ~30 min.configuration

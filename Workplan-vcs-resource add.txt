@@ -1,0 +1,214 @@
+=====================================================================================
+WorkPlan: 1.0 for adding new resources in SG
+=====================================================================================
+-------------------
+SA will follow UNIX-OSI-013 and do the following.
+SA will raise child CR when parent is approved to GSMO-SAN team for SAN devices [100GB X 1, 50GB X1]
+SA will start the Storage scanning and configure in OS as per the OSI document UNIX-OSI-013 for Linux OS
+======================================================================================
+## SA will create the logical as per below
+
+VG=icmdi06_emc03, LV=ipprd46s1temp01 (100GB)
+VG=icmdi06_emc03, LV=ipprd46s1undo01 (50GB)
+VG=icmdi05_emc02, LV=ipprd86temp01 (50GB)
+VG=icmdi05_emc02, LV=ipprd86undo01 (50GB)
+
+## SA will reload multipathd to bring the new devices in mutipath
+service multipathd reload
+
+## SA will do pvcreate on new devices
+pvcreate <new device names>
+
+## SA will do vgextend and add the devices in appropriate VG
+vgextend <VGname> <new device>
+
+## SA will create logical volume with 100%PVS on new devices
+lvcreate -n <name> -L 100%PVS VGNAME PVNAME
+
+## SA will format the logical volumes on ext3 FS
+mkfs.ext3 <full device path>
+
+## SA will create the following directories
+mkdir /ipprd_46s1/oracle/data/temp01
+mkdir /ipprd_46s1/oracle/data/undo01
+mkdir /ipprd_86/oracle/data/temp01  
+mkdir /ipprd_86/oracle/data/undo01  
+
+## SA will mount and unmount the volumes in the appropriate directories to check the volumes properly creation
+mount /dev/icmdi06_emc03/ipprd46s1temp01 /ipprd_46s1/oracle/data/temp01
+mount /dev/icmdi06_emc03/ipprd46s1undo01 /ipprd_46s1/oracle/data/undo01
+mount /dev/icmdi05_emc02/ipprd86temp01   /ipprd_86/oracle/data/temp01
+mount /dev/icmdi05_emc02/ipprd86undo01   /ipprd_86/oracle/data/undo01
+
+chown oracle:dba /ipprd_46s1/oracle/data/temp01
+chown oracle:dba /ipprd_46s1/oracle/data/undo01
+chown oracle:dba /ipprd_86/oracle/data/temp01
+chown oracle:dba /ipprd_86/oracle/data/undo01 
+
+umount /ipprd_46s1/oracle/data/temp01
+umount /ipprd_46s1/oracle/data/undo01
+umount /ipprd_86/oracle/data/temp01
+umount /ipprd_86/oracle/data/undo01 
+ 
+## SA will freeze the service groups
+
+hagrp -freeze ipprd_46s1 -persistent
+hagrp -freeze ipprd_86 -persistent
+
+## SA will do the VCS modification as below
+
+hares -add ipprd_46s1_temp01_lvol LVMLogicalVolume ipprd_46s1
+hares -modify ipprd_46s1_temp01_lvol LogicalVolume ipprd46s1temp01
+hares -modify ipprd_46s1_temp01_lvol VolumeGroup icmdi06_emc03
+hares -modify ipprd_46s1_temp01_lvol Enabled 1
+
+hares -add ipprd_46s1_undo01_lvol LVMLogicalVolume ipprd_46s1
+hares -modify ipprd_46s1_undo01_lvol LogicalVolume ipprd46s1undo01
+hares -modify ipprd_46s1_undo01_lvol VolumeGroup icmdi06_emc03
+hares -modify ipprd_46s1_undo01_lvol Enabled 1
+
+hares -add ipprd_46s1_temp01_mnt Mount ipprd_46s1
+hares -modify ipprd_46s1_temp01_mnt MountPoint "/ipprd_46s1/oracle/data/temp01"
+hares -modify ipprd_46s1_temp01_mnt BlockDevice "/dev/mapper/icmdi06_emc03-ipprd46s1temp01"
+hares -modify ipprd_46s1_temp01_mnt FSType ext3
+hares -modify ipprd_46s1_temp01_mnt FsckOpt "%-y"
+hares -modify ipprd_46s1_temp01_mnt SnapUmount 0
+hares -modify ipprd_46s1_temp01_mnt CkptUmount 1
+hares -modify ipprd_46s1_temp01_mnt SecondLevelMonitor 0
+hares -modify ipprd_46s1_temp01_mnt SecondLevelTimeout 30
+hares -modify ipprd_46s1_temp01_mnt VxFSMountLock 0
+hares -modify ipprd_46s1_temp01_mnt Enabled 1
+
+hares -add ipprd_46s1_undo01_mnt Mount ipprd_46s1
+hares -modify ipprd_46s1_undo01_mnt MountPoint "/ipprd_46s1/oracle/data/undo01"
+hares -modify ipprd_46s1_undo01_mnt BlockDevice "/dev/mapper/icmdi06_emc03-ipprd46s1undo01"
+hares -modify ipprd_46s1_undo01_mnt FSType ext3
+hares -modify ipprd_46s1_undo01_mnt FsckOpt "%-y"
+hares -modify ipprd_46s1_undo01_mnt SnapUmount 0
+hares -modify ipprd_46s1_undo01_mnt CkptUmount 1
+hares -modify ipprd_46s1_undo01_mnt SecondLevelMonitor 0
+hares -modify ipprd_46s1_undo01_mnt SecondLevelTimeout 30
+hares -modify ipprd_46s1_undo01_mnt VxFSMountLock 0
+hares -modify ipprd_46s1_undo01_mnt Enabled 1
+
+=====================================================================================
+
+hares -add ipprd_86_temp01_lvol LVMLogicalVolume ipprd_86
+hares -modify ipprd_86_temp01_lvol LogicalVolume ipprd86temp01
+hares -modify ipprd_86_temp01_lvol VolumeGroup icmdi05_emc02
+hares -modify ipprd_86_temp01_lvol Enabled 1
+
+hares -add ipprd_86_undo01_lvol LVMLogicalVolume ipprd_86
+hares -modify ipprd_86_undo01_lvol LogicalVolume ipprd86undo01
+hares -modify ipprd_86_undo01_lvol VolumeGroup icmdi05_emc02
+hares -modify ipprd_86_undo01_lvol Enabled 1
+
+hares -add ipprd_86_temp01_mnt Mount ipprd_86
+hares -modify ipprd_86_temp01_mnt MountPoint "/ipprd_86/oracle/data/temp01"
+hares -modify ipprd_86_temp01_mnt BlockDevice "/dev/mapper/icmdi05_emc02-ipprd86temp01"
+hares -modify ipprd_86_temp01_mnt FSType ext3
+hares -modify ipprd_86_temp01_mnt FsckOpt "%-y"
+hares -modify ipprd_86_temp01_mnt SnapUmount 0
+hares -modify ipprd_86_temp01_mnt CkptUmount 1
+hares -modify ipprd_86_temp01_mnt SecondLevelMonitor 0
+hares -modify ipprd_86_temp01_mnt SecondLevelTimeout 30
+hares -modify ipprd_86_temp01_mnt VxFSMountLock 0
+hares -modify ipprd_86_temp01_mnt Enabled 1
+
+hares -add ipprd_86_undo01_mnt Mount ipprd_86
+hares -modify ipprd_86_undo01_mnt MountPoint "/ipprd_86/oracle/data/undo01"
+hares -modify ipprd_86_undo01_mnt BlockDevice "/dev/mapper/icmdi05_emc02-ipprd86undo01"
+hares -modify ipprd_86_undo01_mnt FSType ext3
+hares -modify ipprd_86_undo01_mnt FsckOpt "%-y"
+hares -modify ipprd_86_undo01_mnt SnapUmount 0
+hares -modify ipprd_86_undo01_mnt CkptUmount 1
+hares -modify ipprd_86_undo01_mnt SecondLevelMonitor 0
+hares -modify ipprd_86_undo01_mnt SecondLevelTimeout 30
+hares -modify ipprd_86_undo01_mnt VxFSMountLock 0
+hares -modify ipprd_86_undo01_mnt Enabled 1
+
+## SA will create the dependencies of resources
+--------------------------------------------------------------
+hares -link ipprd_46s1_temp01_lvol ipprd_46s1_lvm-vg
+hares -link ipprd_46s1_undo01_lvol ipprd_46s1_lvm-vg
+hares -link ipprd_46s1_temp01_mnt  ipprd_46s1_temp01_lvol
+hares -link ipprd_46s1_undo01_mnt  ipprd_46s1_undo01_lvol
+hares -link ipprd_46s1_customfile  ipprd_46s1_temp01_mnt
+hares -link ipprd_46s1_customfile  ipprd_46s1_undo01_mnt
+hares -link ipprd_46s1_temp01_mnt  ipprd_46s1_oracle_mnt
+hares -link ipprd_46s1_undo01_mnt  ipprd_46s1_oracle_mnt
+--------------------------------------------------------------
+hares -link ipprd_86_temp01_lvol ipprd_86_lvm-vg
+hares -link ipprd_86_undo01_lvol ipprd_86_lvm-vg
+hares -link ipprd_86_temp01_mnt  ipprd_86_temp01_lvol
+hares -link ipprd_86_undo01_mnt  ipprd_86_undo01_lvol
+hares -link ipprd_86_customfile  ipprd_86_temp01_mnt
+hares -link ipprd_86_customfile  ipprd_86_undo01_mnt
+hares -link ipprd_86_temp01_mnt  ipprd_86_oracle_mnt
+hares -link ipprd_86_undo01_mnt  ipprd_86_oracle_mnt
+--------------------------------------------------------------
+
+## SA will unfreeze the service group and enable the resources
+
+hagrp -unfreeze ipprd_46s1 -persistent
+
+## SA will online the resources for ipprd_46s1
+
+hares -online ipprd_46s1_temp01_lvol -sys icmdi05
+hares -online ipprd_46s1_undo01_lvol -sys icmdi05
+hares -online ipprd_46s1_temp01_mnt  -sys icmdi05
+hares -online ipprd_46s1_undo01_mnt  -sys icmdi05
+
+## SA will unfreeze the service group and enable the resources
+
+hagrp -unfreeze ipprd_86 -persistent
+
+## SA will online the resources
+
+hares -online ipprd_86_temp01_lvol -sys icmdi05
+hares -online ipprd_86_undo01_lvol -sys icmdi05
+hares -online ipprd_86_temp01_mnt  -sys icmdi05
+hares -online ipprd_86_undo01_mnt  -sys icmdi05
+
+## SA will ensure the mount points and filesystems
+## SA will ensure the that both service groups should be online in hastatus -summ.
+
+FAILOVER TESTING
+## Not required as per User
+
+VERIFICATION
+--------------------------
+Customer will check his mount points by df -h command
+SA will check the VCS by hastatus -summ
+
+BACK OFF: TEST
+## Test: N/A
+## SA will remove all the newly created resource configuration
+## SA will remove old storage from the OS and GSMO team will reclaim old luns
+
+Customer Notification Method:
+=================================  
+Oracle is the customer and provided awareness/agreement via approval of this CR (or a parent CR).  Will notify customer when work is done by IM or email.
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+=======================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+

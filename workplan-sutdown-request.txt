@@ -1,0 +1,12 @@
+Workplan retirement shutdown
+
+cat /etc/redhat-release
+cat /proc/cpuinfo
+cat /proc/meminfo
+fdisk -l
+ifconfig -a
+lspci | grep -i fib
+multipath -ll | grep -i mpath
+dmidecode -t 1
+/opt/VRTS/bin/vxlicrep|egrep -i "License Key|type"|uniq  
+

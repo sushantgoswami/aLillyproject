@@ -1,0 +1,84 @@
+﻿***************************************************************
+WORK PLAN for Upgrade VCS  5.1SP1 to 6.1.1 on VCS cluster nodes:
+***************************************************************
+
+# Make sure ILOM is working for both server.
+# Make sure root password is working on both servers.
+# Make sure no service group is in PARTIAL/FAULTED state.
+# Take configuration backup from output script.
+
+Note: ‘ssh’ should be configured to be used without the root password prompt so both nodes can be upgraded at the same time for VCS. 
+1. Persistent freeze service groups on all nodes
+Commands for doing this:
+- Make the cluster configuration read / write.
+# haconf -makerw
+
+- Persistent freeze each and all cluster systems (perform this step for each cluster node).
+# hasys -freeze -persistent <nodeA>
+# hasys -freeze -persistent <nodeB>
+
+# hastop -local -force
+# service vxfen stop
+# service gab stop
+# service llt stop
+ 
+- Save and dump the cluster configuration.
+# haconf -dump -makero
+2. Run the 6.1 ./installer from installation software, and select VCS only.
+- Select 'Veritas Cluster Server' to install
+- Do you agree with the terms of the End User License Agreement as specified in the EULA.pdf file present on media? [y,n,q,?] y
+- Select 'G' to upgrade the cluster.
+- enter all node names when prompted.
+- Answer 'y' to continue this installation.
+ 
+--- At this point upgrade the any non-Bundled agents (i.e., Oracle, Sybase) on both nodes.
+ 
+--- Check that the Types.cf has upgraded --- compare /etc/VRTSvcs/conf/Types.cf with /etc/VRTSvcs/conf/config/Types.cf --- the newer one is what should be under /etc/VRTSvcs/conf/config.
+
+--- After completion all services will start automatically
+
+--- Check the MultiNICA resource for IPV4 Route options.
+ 
+3.  After completion of previous step persistent unfreeze service groups all nodes
+Commands for doing this:
+
+
+- Persistent unfreeze each and all cluster systems (perform this step for each cluster node).
+# hasys -unfreeze -persistent <nodeA>
+# hasys -unfreeze -persistent <nodeB>
+ 
+4. Now install the MR patch.
+
+# haconf -makerw
+- Persistent freeze each and all cluster systems (perform this step for each cluster node).
+# hasys -freeze -persistent <nodeA>
+# hasys -freeze -persistent <nodeB>
+
+# hastop -local -force
+# service vxfen stop
+# service gab stop
+# service llt stop
+
+5. Run the 6.1.1 MR patch installer from VCS MR sorce directory.
+# Run ./installmr from root of patch directory.
+- Do you agree with the terms of the End User License Agreement as specified in the EULA.pdf file present on media? [y,n,q,?] y
+- enter all node names when prompted.
+- Answer 'y' to continue this installation.
+
+--- At this point upgrade the any non-Bundled agents (i.e., Oracle, Sybase) on both nodes.
+ 
+--- Check that the Types.cf has upgraded --- compare /etc/VRTSvcs/conf/Types.cf with /etc/VRTSvcs/conf/config/Types.cf --- the newer one is what should be under /etc/VRTSvcs/conf/config.
+
+--- After completion all services will start automatically
+
+--- Check the MultiNICA resource for IPV4 Route options.
+
+6.  After completion of previous step persistent unfreeze service groups all nodes
+Commands for doing this:
+
+- Persistent unfreeze each and all cluster systems (perform this step for each cluster node).
+# hasys -unfreeze -persistent <nodeA>
+# hasys -unfreeze -persistent <nodeB>
+
+Now upgrade to 6.1.1 is done
+

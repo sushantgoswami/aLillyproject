@@ -1,0 +1,165 @@
+Work Plan for changing MultiNICA resource to bonding on phys-jewel and phys-puzzle
+
+Connect textcons from ILO ssh console using saarthi server to remotenp@ribphys-jewel.am.lilly.com and remotenp@ribphys-puzzle.am.lilly.com
+
+1. ***********************************************************************************
+
+run command only from ILO text console
+#haconf -dump 
+#haconf -makerw
+#hagrp -freeze MultiNICA -persistent
+#hagrp -freeze jewel -persistent
+#hagrp -freeze puzzle -persistent
+
+#hares -unlink oracle_qar641 jewel_IPMultiNIC
+#hares -unlink oracle_stg641 jewel_IPMultiNIC
+#hares -delete jewel_IPMultiNIC
+
+#hares -unlink oracle_qar640 IPMultiNIC
+#hares -unlink oracle_stg640 IPMultiNIC
+#hares -delete IPMultiNIC
+
+#hares -delete MN_host
+
+1. ***********************************************************************************
+insert in /etc/modprobe.conf in both phys-puzzle and phys-jewel
+
+#####################################
+# bonding
+alias bond0 bonding
+options bond0 miimon=100 mode=1
+#
+#####################################
+
+run command
+#modprobe bonding (check for errors)
+
+2. ***********************************************************************************
+insert in /etc/sysconfig/network-scripts/ifcfg-bond0
+
+phys-puzzle
+#####################################
+DEVICE=bond0
+BOOTPROTO=none
+ONBOOT=yes
+NETMASK=255.255.255.0
+IPADDR=40.2.249.13
+USERCTL=no
+GATEWAY=40.2.249.254
+TYPE=Ethernet
+IPV6INIT=no
+PEERDNS=yes
+#####################################
+
+phys-jewel
+#####################################
+DEVICE=bond0
+BOOTPROTO=none
+ONBOOT=yes
+NETMASK=255.255.255.0
+IPADDR=40.2.249.14
+USERCTL=no
+GATEWAY=40.2.249.254
+TYPE=Ethernet
+IPV6INIT=no
+PEERDNS=yes
+#####################################
+
+3. ***********************************************************************************
+insert in /etc/sysconfig/network-scripts/ifcfg-eth0 
+and /etc/sysconfig/network-scripts/ifcfg-eth2
+
+phys-puzzle
+#####################################
+DEVICE=eth0
+HWADDR=00:26:55:51:f5:0a
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+DEVICE=eth2
+HWADDR=00:26:55:51:f5:0e
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+
+phys-jewel
+#####################################
+DEVICE=eth0
+HWADDR=00:26:55:4b:b8:6a
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+DEVICE=eth2
+HWADDR=00:26:55:4b:b8:6e
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+
+4. ***********************************************************************************
+
+run command
+#service network restart
+
+(ensure bond0 came up with right interfaces, if bond0 didn't came up then do not execute step 5.)
+
+5. ***********************************************************************************
+
+-From the GUI of VCS console add new resource under MultiNICA (name MN_host) as NIC resource set interface bond0 to monitor
+-add proxy resource on both puzzle and jewel (name proxy_jewel and proxy_puzzle) monitor to MN_host 
+-add resource IP_jewel and IP_puzzle on both service group and give NIC and bond0
+-configure IP on IP_jewel (40.2.249.16)and IP_puzzle (40.2.249.15)
+-online the IP resources
+
+OR FROM command prompt same can be done.
+
+hares -add  MN_host  NIC  Multi-Nica
+hares -modify MN_host Critical 0
+hares -modify MN_host PingOptimize  1 
+hares -modify MN_host Mii  1 
+hares -modify MN_host Device  bond0 
+hares -modify MN_host NetworkHosts -delete -keys
+hares -modify MN_host Enabled 1
+
+hares -add  IP_jewel  IP  jewel
+hares -modify IP_jewel Critical 0
+hares -modify IP_jewel Device  bond0 
+hares -modify IP_jewel Address  40.2.249.16 
+hares -modify IP_jewel NetMask  255.255.255.0 
+hares -modify IP_jewel Enabled 1
+hares -online IP_jewel -sys phys-jewel
+
+hares -add  IP_puzzle  IP  puzzle
+hares -modify IP_puzzle Critical 0
+hares -modify IP_puzzle Device  bond0 
+hares -modify IP_puzzle Address  40.2.249.15 
+hares -modify IP_puzzle NetMask  255.255.255.0 
+hares -modify IP_puzzle Enabled 1
+hares -online IP_puzzle -sys phys-puzzle
+
+hares -add  proxy_jewel  Proxy  jewel
+hares -modify proxy_jewel Critical 0
+hares -modify proxy_jewel TargetResName  MN_host 
+hares -modify proxy_jewel TargetSysName   
+hares -modify proxy_jewel Enabled 1
+
+hares -add  proxy_puzzle  Proxy  puzzle
+hares -modify proxy_puzzle Critical 0
+hares -modify proxy_puzzle TargetResName  MN_host 
+hares -modify proxy_puzzle TargetSysName   
+hares -modify proxy_puzzle Enabled 1
+
+************************************ The End **************************************
+
+

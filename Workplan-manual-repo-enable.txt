@@ -1,0 +1,40 @@
+Change Summary:
+
+Server: oslxtxmin01
+
+Operating System: Red Hat Enterprise Linux Server release 7.4 (Maipo)
+
+Environment: prod(p)
+
+
+Implementation Plan:
+Will make entry in vi /etc/yum.repos.d/lilly.repo
+like
+
+[as7-u4_64]
+name=Red Hat Enterprise Linux Server 7.4 x86_64 GA
+baseurl=file:///net/gutstools.am.lilly.com/guts_dev/distr/redhat/as7-u4_64
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+ and 
+[ws7-u3_64]
+name=Red Hat Enterprise Linux Workstation 7.3 x86_64 GA
+baseurl=file:///net/gutstools.am.lilly.com/guts_dev/distr/redhat/ws7-u3_64
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-redhat-release
+
+
+Verification Plan:
+grep -i as7-u4_64  /etc/yum.repos.d/lilly.repo
+grep -i as7-u3_64  /etc/yum.repos.d/lilly.repo
+Backout Plan:
+Will remove the entry from vi /etc/yum.repos.d/lilly.repo
+
+
+Notification Plan: Requester will be notify via phone call/email or IM.
+
+Communication Plan: By raising CR, requester is aware/agreed/approved all impact/changes made to system.
+
+Note: We  are expected to do regular follow-ups with the Requester and the Change can be closed after 3 emails, if no response from the requester/approver(s).

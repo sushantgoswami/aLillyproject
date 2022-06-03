@@ -1,0 +1,29 @@
+WORKPLAN 1.1 (Revised)
+---------------------
+
+TASK 1: Increase swap space to 56 GB as the system is having 28 GB of physical memory
+
+1. Server is using 2 partitions as swap space.
+-----------------------------------------
+Filename                                Type            Size    Used    Priority
+/dev/sda2                               partition       8388600 78484   -1
+/dev/sdb1                               partition       25165800        0       -2
+----------------------------------------- 
+2. Partition /dev/sda2 is the part of root disk and having capacity of 8GB, so we need a 48GB additional Lun.
+3. Once the swap in 48GB is active, SA will turn off the 24GB swap and de allocate it from the VM.
+
+Commands to execute:
+=====================
+1. Allocate 48GB VMDK device from ESX datastore to the VM machine.
+2. Scan the disk in OS by
+echo "- - -" > /sys/class/scsi_host/host<number>/scan; and get the name in dmesg
+3. make a partition with type 82 on the newly added harddisk.
+4. format it as swap --> mkswap /dev/sdc1
+5. activate the swap by --> swapon /dev/sdc1
+6. enter the appropriate values in /etc/fstab
+7. deactivate the old swap --> swapoff /dev/sdb1
+8. echo 1 > /sys/block/sdb/device/delete
+9. Remove the old 24GB VMDK device from datastore.
+10 Remove the old entries of 24GB swap from /etc/fstab file.
+
+=========================================================================

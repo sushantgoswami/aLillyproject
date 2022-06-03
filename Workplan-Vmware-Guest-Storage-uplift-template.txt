@@ -1,0 +1,34 @@
+===================================================== 
+WORKPLAN 1.0 for adding new filesystems 
+===================================================== 
+1. SA will add 1Lun on each VM from the datastore below
+
+2. SA will scan the LUNS and add in to the VG01 VG and create Logical volumes.
+echo - - - /sys/class/scsi_host/host(XX)/scan
+pvcreate <new device>
+vgextend vg01 <new device>
+lvextend -L +100G /dev/vgXX/lvXX
+resize2fs /dev/vgXX/lvXX
+
+=======================================================
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Verification: 
+============ 
+Customer will run "df -h" and "ls -ltr" to verify the file systems
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.( will change system list to previous state)
+Backout time: ~30 min.configuration

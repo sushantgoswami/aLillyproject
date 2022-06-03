@@ -1,0 +1,60 @@
+Change Summary: New file system  creation
+
+Environment: QA
+
+GBIP: No
+
+Pre-Work: Physical server in LVM and multipath
+
+======================================================================= 
+WORKPLAN 1.0 for new File system Creation in LVM
+======================================================================== 
+
+SA will follow UNIX-OSI-013 and do the following.
+SA will add storage from datastore/SAN
+Will scan devices and create PV and VG's and mount the new FS.
+
+echo "- - -" > /sys/class/scsi_host/hostXX/scan
+
+service multipathd reload
+
+pvcreate /dev/mapper/mpathXX (mpathXX is new device)
+
+vgcreate vgname /dev/mapper/mpathXX
+
+lvcreate -l +100%PVS /dev/vgname/LV_name /dev/mapper/mpathXX
+
+mkfs.ext3  /dev/vgname/LV_name
+
+mount /dev/vgname/LV_name /mount_dir
+
+edit the new entries in /etc/fstab
+
+Change ownership by chown command.
+
+Change permission by chmod command
+
+Give ACL permissions if appliciable
+
+Verification:
+-------------------
+by df -h 
+Customer will verify.
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.
+Backout time: ~30 min.configuration

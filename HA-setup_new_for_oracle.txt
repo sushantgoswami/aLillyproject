@@ -1,0 +1,70 @@
+Please perform the following activities to set up a High Availabilty service group
+
+1. Host names 
+
+Software:			__VCS____________ ( VCS, Service Guard )
+Service group name		_____ipprd_46s3_________
+Primary physical host	__ snlxmdi01____________
+Backup physical host	_____ snlxmdi02_________
+
+
+
+3. Cluster configuration### It should have been already configured
+
+Configure the following objects 
+	- Service TCP/IP address
+	- Shared file systems
+
+You will configure the Oracle objects later. 
+
+
+4.  Backup exclusions #######Not required
+
+Add the following entries to Netbackup or Avamar exclude list on all physical nodes  (e.g. /usr/openv/netbackup/exclude_list):
+/oracle/data
+/<service>/oracle/data    (e.g. /lhprd123/oracle/data)
+
+5. VCS specific setup tasks.
+
+These commands will allow anyone to query the status of the cluster, and allow the oracle account to freeze/unfreeze the service groups.
+
+public access, with no password
+
+	/etc/sudo -l
+	/etc/sudo /opt/VRTSvcs/bin/hastatus -summary
+	/ect/sudo /opt/VRTSvcs/bin/hares -display -type Oracle -attribute Group
+
+oracle access, with no password
+
+	/etc/sudo /etc/orahagrp
+
+	Copy the orahagrp script from the ASRL.  gbuxtools.d52.lilly.com:/export/gbuxtools/poc/tmp_repository
+
+6. Service Guard specific setup tasks
+
+These commands will allow anyone to query the status of the cluster, and allow the oracle account to lock/unlock the service groups.
+
+public access, with no passwd
+
+	/etc/sudo -l
+	/etc/sudo /etc/sbin/cmviewcl
+
+oracle access, with no password
+
+	/etc/sudo /usr/local/bin/cmmaint
+
+7. Notify the DBA.  Wait for the software/database to be created
+
+Let the DBA know that you have completed the steps up to this point.  You can place this CR into AWAITING state while the DBA installs the Oracle software and creates the database.
+
+8 Configure the Oracle service objects
+
+	- Oracle SID/database 		___PRD_46s3_____________
+		ORACLE_HOME		/ipprd_46s3/oracle/product/root1_ipprd_46s3
+		pfile/spfile location		/ipprd_46s3/oracle/admin/prd_46s3/pfile/initprd_46s3.ora
+	- Oracle listener 			LSNR_ipprd_46s3_1543
+		Listener.ora location		/oracle/local/dat
+
+9. Oracle detail monitoring should not be configured due to load put on authentication servers (.e.g LDAP)
+
+10. Perform failover testing

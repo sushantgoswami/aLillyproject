@@ -1,0 +1,126 @@
+WORKPLAN 1.0 for creating Oracle Filesystem 
+=================================================
+1. SA Will create oracle home directory as specified.
+================================================
+>  File systems
+
+Local file systems (if not already present)
+		, configure on each physical server)	Size
+====================================		=========
+/oracle						30GB  (size enough for at least 2 oracle installations)
+======================================================
+Shared file systems					Size
+====================================		=========
+/lhprd787/oracle					30GB  (size enough for at least 2 oracle installations)
+/lhprd787/oracle/data/ora01				200GB
+/lhprd787/oracle/data/ora02				200GB
+/lhprd787/oracle/data/ora03				200GB
+/lhprd787/oracle/data/ora04				200GB
+/lhprd787/oracle/data/ora05				100GB
+/lhprd787/oracle/data/arch01			70GB (general guideline)
+================================================
+
+2. Will create symbolic links as specified
+> Not needed
+
+3. Installed xterm on server - 
+> Not needed
+ 
+4. Will create oraInst.loc file as specified
+> Not needed
+
+5. Create link to sudo - 
+> already done
+
+6. Create link to mailx - 
+> already done
+
+7. make /net/cdjuke available to the server - 
+> already done
+
+8. Is this a Client Root? Y/N - 
+> No
+
+9.  For the creation of the database filesystems
+we will cut a child CR to GSMO asking for following size devices:
+================================================
+Primary physical host	iiqoradbp01.am.lilly.com -> 30gb unshared local FS
+Backup physical host	iiqoradbq01.am.lilly.com -> 30gb unshared local FS 
+									 Shared Luns -> 30GB X 1, 200GB X 4, 100GB X 1, 70GB X 1 
+   
+ 
+We will ensure that each filesystem is on it's own dedicated device (one-to-one mapping).
+
+Once GSMO has provided the storage, will use it to create the filesystems as specified.  Volume group will be named oraclevg.
+Later on the service group VG will be named as servicegroup-vg
+Will add entries to /etc/fstab so filesystems mount at boot and then mount the filesystems and set ownership to oracle:dba.
+This work will be done according to UNX-OSI-013 - UNIX Disk Management.
+
+For RHEL6 servers, if transparent hugepages is already disabled then /sys/kernel/mm/redhat_transparent_hugepage/enabled will have '[never]' in it
+
+Example of a system that has THP disabled:
+# cat /sys/kernel/mm/redhat_transparent_hugepage/enabled
+always madvise [never]
+
+If THP is not disabled, will do so by:
+a).  cp -p /boot/grub/grub.conf /boot/grub/grub.conf.preCRXXXXXXXX 
+
+b).  append "transparent_hugepage=never" to the kernel line in /boot/grub/grub.conf
+Example:  kernel /vmlinuz-2.6.32-279.el6.x86_64 ro root=/dev/mapper/rootvg-rootlv rd_LVM_LV=rootvg/rootlv LANG=en_US.UTF-8 rd_NO_MD crashkernel=128M transparent_hugepage=never
+
+
+c).  Add the following to /etc/rc.local:
+
+# Oracle Doc ID 1557478.1 - ALERT: Disable Transparent HugePages on RHEL6 
+if test -f /sys/kernel/mm/redhat_transparent_hugepage/enabled; then 
+   /bin/echo never > /sys/kernel/mm/redhat_transparent_hugepage/enabled 
+   /bin/logger -p local0.info Turning off transparent hugepages via /etc/rc.local 
+fi
+
+10. SA Will modify /etc/sysctl.conf as needed and apply changes using sysctl -p
+
+11. SA Will update /etc/security/limits.conf as specified.
+
+12. SA Will verify that pam_limits.so module is loaded in /etc/pam.d/system-auth
+
+13. Will copy /etc/init.d/oracle from tactical and make sure ownership is root:root and permissions 744 (rwxr--r--)
+Will then run:  chkconfig --add oracle
+
+14. Set up the appropriate backup utility (netbackup, avamar, etc.) - 
+> already done
+
+Criteria for Success/Requirements for verification of correct implementation:
+
+Verification
+------------------
+
+df -hP			- verify all needed filesystems are mounted
+ls /net/cdjuke		- verify files are visible
+find /oracle -type d -exec ls -ald {} \;               - verify all are owned by oracle:dba
+find /oracle -name lost+found -exec ls -ald {} \;      - verify all are owned by root:root
+visually inspect /etc/sysctl.conf and verify changes have been made
+visually inspect /etc/security/limits.conf and verify changes have been made
+grep pam_limits.so /etc/pam.d/system-auth   and verify line is present
+
+visually inspect /etc/sysctl.conf	and verify changes have been made
+visually inspect /etc/init.d/oracle	and verify it is correct
+ls -ald /etc/init.d/oracle		and verify ownership and permissions are correct
+chkconfig --list oracle 
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.( will change system to previous state)
+Backout time: ~30 min.configuration

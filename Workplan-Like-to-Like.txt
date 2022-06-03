@@ -1,0 +1,45 @@
+Change Summary: Like to Like before migration
+
+Environment: 
+
+GBIP: No
+
+Pre-Work: Check the server and filesystems 
+
+======================================================================= 
+WORKPLAN 1.0 for Like for Like config
+======================================================================== 
+
+SA will follow UNIX-OSI-013 and do the following.
+
+SA will check the following
+
+1. check passwd file for any local user
+2. check the file systems matching each other
+3. copy application and DB scripts from old to new server
+4. copy ulimits from old to new
+
+edit the new entries in /etc/fstab
+
+Verification:
+-------------------
+by df -h 
+Customer will verify.
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.
+Backout time: ~30 min.configuration

@@ -1,0 +1,18 @@
+Change Summary:
+
+Environment: Prod/Dev/Test (This can be checked via GUTS and we can easily identify if any other approval required or not example: Case where multiple applications are running on DB server)
+
+GBIP: Yes/No (This will help to check GBIP-OCG approval)
+
+Pre-Work:
+
+Implementation Plan:
+
+Verification Plan:
+
+Backout Plan:
+
+Notification Plan: Requester will be notify via phone call/email or IM.
+
+Communication Plan: By raising CR, requester is aware/agreed/approved all impact/changes made to system.
+

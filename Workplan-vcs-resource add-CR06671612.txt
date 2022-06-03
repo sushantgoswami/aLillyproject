@@ -1,0 +1,141 @@
+=====================================================================================
+WorkPlan: 1.1 (Revised) for adding new FS resources in SG (LVM)
+=====================================================================================
+
+SA will follow UNIX-OSI-013 and do the following.
+SA will follow UNIX-OSI-012 for cluster configuration.
+SA will raise child CR when parent CR is approved to GSMO-SAN team for SAN devices [500GB X 1]
+SA will create and configure the storage in OS as per the OSI document UNIX-OSI-013 for Linux OS
+
+======================================================================================
+## SA will create the logical as per below configuration
+==========================================
+VG=icmfg56_emc02, LV=ipprd315ora13 (500GB)
+==========================================
+
+## SA will scan luns using this
+/usr/sbin/lpfc/lun_scan all
+
+## SA will reload multipathd to bring the new devices in mutipath
+service multipathd reload
+
+## SA will find out the Lun name through inq and will get the new device mpath name
+/opt/ecc/exec/MLR610/inq.linux -sym_wwn | grep <Lun ID provided by storage>
+
+## SA will do pvcreate on new devices
+pvcreate <new device names>
+
+## SA will do vgextend and add the devices in appropriate VG
+vgextend icmfg56_emc02 <new device>
+
+## SA will create logical volume with 100%PVS on new devices
+lvcreate -n ipprd315ora13 -L 100%PVS icmfg56_emc02 <PVNAME in mpath>
+
+## SA will format the logical volumes on ext3 FS
+mkfs.ext3 /dev/icmfg56_emc02/ipprd315ora13
+
+## SA will create the following directories
+mkdir /ipprd315/oracle/data/ora13
+
+## SA will mount and unmount the volumes in the appropriate directories to check the volumes properly creation
+mount /dev/icmfg56_emc02/ipprd315ora13 /ipprd315/oracle/data/ora13
+
+## Change the Ownership
+chown oracle:dba /ipprd315/oracle/data/ora13
+
+## Unmount the filesystem
+umount /ipprd315/oracle/data/ora13
+ 
+## SA will freeze the service groups
+
+hagrp -freeze ipprd315 -persistent
+
+## SA will do the VCS modification as below
+
+hares -add ipprd315_lvol_ora13 LVMLogicalVolume ipprd315
+hares -modify ipprd315_lvol_ora13 LogicalVolume ipprd315ora13
+hares -modify ipprd315_lvol_ora13 VolumeGroup icmfg56_emc02
+hares -modify ipprd315_lvol_ora13 Enabled 1
+
+hares -add ipprd315_mnt_ora13 Mount ipprd315
+hares -modify ipprd315_mnt_ora13 MountPoint "/ipprd315/oracle/data/ora13"
+hares -modify ipprd315_mnt_ora13 BlockDevice "/dev/mapper/icmfg56_emc02-ipprd315ora13"
+hares -modify ipprd315_mnt_ora13 FSType ext3
+hares -modify ipprd315_mnt_ora13 FsckOpt "%-y"
+hares -modify ipprd315_mnt_ora13 SnapUmount 0
+hares -modify ipprd315_mnt_ora13 CkptUmount 1
+hares -modify ipprd315_mnt_ora13 SecondLevelMonitor 0
+hares -modify ipprd315_mnt_ora13 SecondLevelTimeout 30
+hares -modify ipprd315_mnt_ora13 VxFSMountLock 0
+hares -modify ipprd315_mnt_ora13 Enabled 1
+
+## SA will create the dependencies of resources
+--------------------------------------------------------------
+hares -link ipprd315_lvol_ora12 ipprd315_lvm-vg
+hares -link ipprd315_mnt_ora12  ipprd315_lvol_ora13
+
+hares -link ipprd315_customfile ipprd315_mnt_ora13
+hares -link ipprd315_mnt_ora13  ipprd315_mnt_oracle
+
+--------------------------------------------------------------
+
+## SA will unfreeze the service group and enable the resources
+
+hagrp -unfreeze ipprd315 -persistent
+
+## SA will online the resources for ipprd_46s1
+
+hares -online ipprd315_lvol_ora13 -sys icmfg56
+hares -online ipprd315_mnt_ora13 -sys icmfg56
+
+## SA will ensure the mount points and filesystems
+## SA will ensure the that both service groups should be online in hastatus -summ.
+
+FAILOVER TESTING
+---------------
+## SA will start the failover test, after confirmation from DBA
+
+hagrp -switch ipprd315 -to icmfg55
+
+## SA will send email and hastatus output to DBA in email
+
+hagrp -switch ipprd315 -to icmfg56
+
+## SA will send email and hastatus output to DBA in email
+
+VERIFICATION
+--------------------------
+Customer will check his mount points by df -h command
+SA will check the VCS configuration by hastatus -summ
+
+BACK OFF: TEST
+## Test: N/A
+## SA will remove all the newly created resource configuration
+## SA will remove old storage from the OS and GSMO team will reclaim old luns
+
+Customer Notification Method:
+=================================  
+Oracle is the customer and provided awareness/agreement via approval of this CR (or a parent CR).  Will notify customer when work is done by IM or email.
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+=======================================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+

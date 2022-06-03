@@ -1,0 +1,55 @@
+======================================================================= 
+WORKPLAN 1.0 for removing database and listener resource in SG yovcs11
+======================================================================== 
+## SA will follow the document UNIX-OSI-012 and make configuration changes as below.
+## SA will blackout the server during the Activity, the Activity may also include the shutdown of qa999 which is already running.
+## DBA team should intimate UNIX team before database installation. SA will freeze existing service groups.
+## After confirmation from DB team, unix will remove resources in existing SG, At this time DB will be shutdown by DBA.
+
+DBA team should freeze the service group before removal of DB and Listener
+One DBA team is done, they should communicate to platform team for removal of resources
+
+hares -unlink ora-qa999-yovcs11 on-off-yovcs11
+hares -unlink oralsnr-1533-yovcs11 on-off-yovcs11
+
+hares -delete ora-qa999-yovcs11
+hares -delete oralsnr-1533-yovcs11
+
+haconf -dump
+cp /etc/VRTSvcs/conf/config/main.cf /etc/VRTSvcs/conf/config/main.cf-PRE-CR
+haconf -makerw
+hagrp -unfreeze yovcs11 -persistent
+
+haconf -dump -makero
+
+=====================================================
+OVERALL WORKFLOW
+=====================================================
+Unix SA will follow the document UNIX-OSI-12 for vcs configuration change
+DBA team will freeze the SG persistent
+DBA's will do their work and then give the servers back to Unix team.
+Unix team will unfreeze SG and make changes to VCS and online service group
+DBA's will verify that database/lsnr gone successfully
+=====================================================
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Verification: 
+============ 
+Customer will ssh and check his app on the new network
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.
+Backout time: ~30 min.configuration

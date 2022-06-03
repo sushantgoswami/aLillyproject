@@ -1,0 +1,734 @@
+
+Preparation - (outside of outage, no interuption to service)
+
+1.    ON both YFHP14 and YFHP15
+
+Install Navisphere Agent -                                                              (
+
+swinstall -s /net/yosn60/sftrps/Current/emc_navisphere_agent/packages/hp-ux_pa/NAVIAGNT.dep NAVIAGENT NAVICLI
+
+Modify /etc/Navisphere/agent.config:
+
+     Add "nomegapoll" at the top of the file
+     Uncomment OptionsSupported AutoTrespass
+     Add/modify "poll 120"
+     Add user information:-
+
+user root
+user system@40.231.193.210                    
+user system@40.231.193.211
+user system@40.231.221.210
+user system@40.231.221.211
+/sbin/init.d/agent stop
+/sbin/init.d/agent start
+
+2.   Schedule ignite backup for each server - 06:00
+
+3. Check Storage team have CR's for attachment and Luns
+
+4. Set ESM blackout for outage window  YFHP14 and YFHP15
+
+------------------------------------------------------------------------------------------------------------
+
+System Health Check - (Before outage begins)
+
+1. Check Ignite backup - yfhp14 and yfhp15
+
+2. Check remote console connections  - yfhp14 and yfhp15
+
+3.  Check root logins - yfhp14 and yfhp15
+
+4.  Check ESM Blackout set - YFHP14 and  YFHP15
+
+5.  Check Sysreport available  -  YFHP14 and  YFHP15
+6.             stm  (if available)      - YFHP14 and YFHP15
+7.             ioscan -f                   - - YFHP14 and YFHP15
+8.              view /var/adm/syslog/syslog.log           - YFHP14 and YFHP15
+9 .             dmesg                                                     - YFHP14 and YFHP15           
+10.           bdf                                                          - YFHP14 and YFHP15
+11.      Ask Storage resource to confirm no CRC errors on switches involved in migration
+12.      Check Backups                                           - YFHP14 and YFHP15
+
+                Filesystem backup   
+                Oracle Backup 
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------
+
+REMOVE the redundant package
+
+1) Check cluster status:-                          cmviewcl
+
+2)  Halt the package and take a final safe copy of the config file
+
+cd /etc/cmcluster
+cmhaltpkg yfpkgt02
+cmgetconf -p  yfpkgt02 pre_CE****_ yfpkgt02.ascii
+
+3)  Delete the package
+
+cmdeleteconf -p yfpkgt02
+
+4) Export the diskgroups on YFHP14  (with a final map)
+
+cd /etc/lvmconf
+
+vgexport -m final_ vg_pkgt02_01.map -p  /dev/vg_pkgt02_01
+vgexport -m final_/ vg_pkgt02_02.map -p dev/vg_pkgt02_02
+
+repeat without the -p if no relevant errors
+
+5) Export the diskgroups on YFHP15
+
+cd /etc/lvmconf
+
+vgexport -m final_ vg_pkgt02_01.map -p  /dev/vg_pkgt02_01
+vgexport -m final_/ vg_pkgt02_02.map -p dev/vg_pkgt02_02
+
+repeat without the -p if no relevant errors
+
+
+6) Check the syslog - note how the cluster responds to the loss of a quorum disk.
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Storage Migration - Stop Cluster
+
+
+1)   Halt the remaining packages:-
+
+cmhaltpkg yfpkgt03
+cmhaltpkg yfpkgt01
+
+2)  Extract the current configuration file:- 
+
+cd /etc/cmcluster
+
+cmgetconf -C pre_CE*****_clconfig.ascii
+
+3)  Halt the cluster
+
+cmhaltcl -f -v
+
+4)   Check all filesystems are dismounted on both systems  - BDF
+
+5)  Stop cluster software from starting on reboot
+
+cd /etc/rc.config.d
+vi cmcluster
+set to:-
+
+  ""AUTOSTART_CLMD""=0
+                
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Storage Migration  - Manual Disk Mounts
+
+vgchange -c n  /dev/vg_pkgt01_01
+vgchange -c n  /dev/vg_pkgt01_02
+vgchange -c n  /dev/vg_pkgt03_01
+vgchange -c n  /dev/vg_ pkgt03_02
+
+vgchange -a y /dev/vg_pkgt01_01
+vgchange -a y  /dev/vg_pkgt01_02
+vgchange -a y  /dev/vg_pkgt03_01
+vgchange -a y  /dev/vg_ pkgt03_02
+
+(vgchange -a e  if necessary)
+
+
+mount -f vxfs /dev/vg_pkgt03_02/lvol1 /data1_yfpkgt03
+mount -f vxfs /dev/vg_pkgt03_02/lvol2 /data2_yfpkgt03
+mount -f vxfs  /dev/vg_pkgt03_02/lvol3 /data3_yfpkgt03
+mount -f vxfs /dev/vg_pkgt03_02/lvol4 /data4_yfpkgt03
+mount -f vxfs /dev/vg_pkgt03_02/lvol5 /data5_yfpkgt03
+mount -f vxfs /dev/vg_pkgt03_02/lvol6 /data6_yfpkgt03
+mount -f vxfs /dev/vg_pkgt03_02/lvol7 /archive_yfpkgt03
+
+mount -f vxfs /dev/vg_pkgt03_01/lvol1 /software/oracle_yfpkgt03
+
+mount -f vxfs  /dev/vg_pkgt01_01/lvol1 /data1_yfpkgt01
+mount -f vxfs  /dev/vg_pkgt01_01/lvol2 /data2_yfpkgt01
+mount -f vxfs  /dev/vg_pkgt01_01/lvol3 /data3_yfpkgt01
+mount -f vxfs  /dev/vg_pkgt01_01/lvol4 /data4_yfpkgt01
+mount -f vxfs  /dev/vg_pkgt01_01/lvol5 /data5_yfpkgt01
+mount -f vxfs  /dev/vg_pkgt01_01/lvol6 /data6_yfpkgt01
+mount -f vxfs /dev/vg_pkgt01_01/lvol7 /archive_yfpkgt01
+
+mount -f vxfs /dev/vg_pkgt01_02/lvol1 /software/oracle_yfpkgt01
+mount -f vxfs  /dev/vg_pkgt01_02/lvol2 /software/appl_yfpkgt01
+
+
+
+CRITICAL CHECK HERE - ALL FILESYSTEMS MOUNTED
+                      ALL MIRRORS VALID
+
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Storage Migration - Failover paths through one HBA
+
+1.    Turn off load balancing in spmgr
+
+spmgr set -b off
+
+2.     Failover all paths to td0
+
+spmgr select -p cxxtxdx
+
+3.    Confirm all LUNS accessed through  same HBA     
+
+spmgr display | grep -i active
+
+4.    Record original config    YFHP14
+                                                       
+mkdir /SAN_MIG                                                                         
+spmgr display > /SAN_MG/spmgr.txt      
+ioscan - fnC disk > /SAN_MG/ioscan.txt     
+ioscan -fnC  fc >> /SAN_MG/ioscan.txt
+
+5.   Record original config  YFHP15
+
+mkdir /SAN_MIG                                                                         
+spmgr display > /SAN_MG/spmgr.txt      
+ioscan - fnC disk > /SAN_MG/ioscan.txt     
+ioscan -fnC  fc >> /SAN_MG/ioscan.txt
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Storage Migration - Disconnect 1st HBA
+
+Request FEG to disconnect HBA TD1  from EVA SAN switch and connect to Clarrion Switch
+
+Check the mirror status of the LVOLS  (should ALL remain sync'd)
+Check securepath display - should loose paths through TD1 only
+
+Request GSM to Zone in
+
+Run the ioscan -fn and insf -e commands
+/sbin/init.d/agent stop
+/sbin/init.d/agent start
+Check for LUNZ
+
+
+Request GSM to allocate LUNS from first Clarrion 
+
+On notification from the storage team:-
+Run the ioscan -fn and insf -e commands
+/sbin/init.d/agent stop
+/sbin/init.d/agent start
+Check for LUNS
+
+Record LUNS in Test/back-off section   - EMC03
+
+Ask Storage to allocate LUNS from 2nd Array 
+
+On notification from the storage team:-
+Run the ioscan -fn and insf -e commands
+/sbin/init.d/agent stop
+/sbin/init.d/agent start
+Check for LUNZ
+
+Request GSM to register HOST and allocate LUNS from first Clarrion  (assuming host based mirroring in effect
+
+On notification from the storage team:-
+Run the ioscan -fn and insf -e commands
+/sbin/init.d/agent stop
+/sbin/init.d/agent start
+Check for LUNS requested
+
+Record LUNS in Test/back-off section  - EMC04
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Storage Migration - Add LUNS, break mirror, first mirror to EMC
+
+pvcreate:-
+
+Initialise the  LUN path to the primary SP for each pair recorded in the Test/Backoff section
+
+                            pvcreate /dev/rdsk/cntndn 
+
+Add new  EMC03 LUNs to volume group(s): - path to Primary SP only - excluding the 500mb lock disk
+
+vgextend vg_pkgt01_01 /dev/dsk/cntndn  /dev/dsk/cntndn 
+vgextend vg_pkgt01_02 dev/dsk/cntndn  /dev/dsk/cntndn
+vgextend vg_pkgt03_01 dev/dsk/cntndn  /dev/dsk/cntndn
+vgextend vg_pkgt03_02 dev/dsk/cntndn
+
+Break the mirrors - all volumes on C21
+
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol1 /dev/dsk/c21t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol2 /dev/dsk/c21t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol3 /dev/dsk/c21t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol4 /dev/dsk/c21t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol5 /dev/dsk/c21t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol6 /dev/dsk/c21t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol7 /dev/dsk/c21t0d7  
+lvreduce -m 0 /dev/vg_pkgt01_02/lvol1 /dev/dsk/c21t0d3
+lvreduce -m 0 /dev/vg_pkgt01_02/lvol2 /dev/dsk/c21t0d3 /dev/dsk/c21t0d6
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol1 /dev/dsk/c21t0d1
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol3 /dev/dsk/c21t0d1
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol4 /dev/dsk/c21t0d1
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol2 /dev/dsk/c21t0d1
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol5 /dev/dsk/c21t0d1
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol6 /dev/dsk/c21t0d1
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol7 /dev/dsk/c21t0d1
+lvreduce -m 0 /dev/vg_pkgt03_01/lvol1 /dev/dsk/c21t0d0 /dev/dsk/c21t1d0
+
+Mirror to the EMC03 LUNS
+
+#!/usr/bin/ksh
+echo `date`
+for i in /dev/ vg_pkgt01_01/lv*; do lvextend -m 1 $i /dev/dsk/cxxtxdx /dev/dsk/cxxtxdx; done
+echo `date`
+exit
+
+(remember we are not including the 500mb lock disk in the data extension of pkgt01_02)
+
+#!/usr/bin/ksh
+echo `date`
+for i in /dev/ vg_pkgt01_02/lv*; do lvextend -m 1 $i /dev/dsk/cxxtxdx; done
+echo `date`
+exit
+
+#!/usr/bin/ksh
+echo `date`
+for i in /dev/ vg_pkgt03_01/lv*; do lvextend -m 1 $i /dev/dsk/cxxtxdx /dev/dsk/cxxtxdx; done
+echo `date`
+exit
+
+#!/usr/bin/ksh
+echo `date`
+for i in /dev/ vg_pkgt03_02/lv*; do lvextend -m 1 $i /dev/dsk/cxxtxdx /dev/dsk/cxxtxdx; done
+echo `date`
+exit
+
+Check ALL mirrors valid
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Storage Migration - 2nd Mirror
+
+vgreduce the volume groups - removing the disks dropped from the 1st EVA mirror.
+
+
+vgreduce vg_pkgt01_01 /dev/dsk/c21t0d4 /dev/dsk/c21t0d7
+vgreduce  vg_pkgt01_02  /dev/dsk/c21t0d3 /dev/dsk/c21t0d6
+vgreduce  vg_pkgt03_02 /dev/dsk/c21t0d1
+vgreduce  vg_pkgt03_01 dev/dsk/c21t0d0 /dev/dsk/c21t1d0
+
+Check - NO C21 devices in volume groups
+
+
+Add the volumes from EMC04  - excluding 500mb lock disk  
+
+vgextend vg_pkgt01_01 /dev/dsk/cntndn  /dev/dsk/cntndn 
+vgextend vg_pkgt01_02 dev/dsk/cntndn  
+vgextend vg_pkgt03_01 dev/dsk/cntndn  /dev/dsk/cntndn
+vgextend vg_pkgt03_02 dev/dsk/cntndn
+
+Break the mirrors dropping the 2nd EVA volumes  (c20)
+
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol1 /dev/dsk/c20t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol2 /dev/dsk/c20t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol3  /dev/dsk/c20t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol4  /dev/dsk/c20t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol5  /dev/dsk/c20t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol6  /dev/dsk/c20t0d4
+lvreduce -m 0 /dev/vg_pkgt01_01/lvol7  /dev/dsk/c20t0d7
+lvreduce -m 0 /dev/vg_pkgt01_02/lvol1  /dev/dsk/c20t0d3
+lvreduce -m 0 /dev/vg_pkgt01_02/lvol2  /dev/dsk/c20t0d3 /dev/dsk/c20t0d6
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol1  /dev/dsk/c20t0d0
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol2  /dev/dsk/c20t0d0
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol3  /dev/dsk/c20t0d0
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol4  /dev/dsk/c20t0d0
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol5  /dev/dsk/c20t0d0
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol6  /dev/dsk/c20t0d0
+lvreduce -m 0 /dev/vg_pkgt03_02/lvol7  /dev/dsk/c20t0d0
+lvreduce -m 0 /dev/vg_pkgt03_01/lvol1  /dev/dsk/c20t0d1 /dev/dsk/c20t0d1 
+
+Mirror to 2nd Clarrion devices:-
+
+#!/usr/bin/ksh
+echo `date`
+for i in /dev/ vg_pkgt01_01/lv*; do lvextend -m 1 $i /dev/dsk/cxxtxdx /dev/dsk/cxxtxdx; done
+echo `date`
+exit
+
+
+#!/usr/bin/ksh
+echo `date`
+for i in /dev/ vg_pkgt01_02/lv*; do lvextend -m 1 $i /dev/dsk/cxxtxdx; done
+echo `date`
+exit
+
+(remember we are not including the 500mb lock disk in the data extension of pkgt03_01)
+
+#!/usr/bin/ksh
+echo `date`
+for i in /dev/ vg_pkgt03_01/lv*; do lvextend -m 1 $i /dev/dsk/cxxtxdx /dev/dsk/cxxtxdx; done
+echo `date`
+exit
+
+#!/usr/bin/ksh
+echo `date`
+for i in /dev/ vg_pkgt03_02/lv*; do lvextend -m 1 $i /dev/dsk/cxxtxdx; done
+echo `date`
+exit
+
+Check for valid mirrors between EMC03 and EMC04
+
+Remove last EVA volumes from volume groups
+
+
+(you need to re-check this when the mirrors are fixed)
+
+vgreduce vg_pkgt01_01/dev/dsk/c20t0d4 /dev/dsk/c20t0d7
+vgreduce vg_pkgt01_02 /dev/dsk/c20t0d3
+vgreduce vg_pkgt03_02 /dev/dsk/c20t0d0 
+vgreduce vg_pkgt03_01 /dev/dsk/c20t0d1 /dev/dsk/c20t0d1  
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Storage Migration - Disconnect 2nd HBA
+
+
+Request FEG to disconnect HBA TD0  from EVA SAN switch and connect to Clarrion Switch
+
+Check the mirror status of the LVOLS  (should ALL remain sync'd)
+Check securepath display - should loose ALL paths
+
+Request GSM to Zone in
+
+Run the ioscan -fn and insf -e commands
+/sbin/init.d/agent stop
+/sbin/init.d/agent start
+Check for LUNZ
+
+
+Request GSM to present  LUNS 
+
+On notification from the storage team:-
+Run the ioscan -fn and insf -e commands
+/sbin/init.d/agent stop
+/sbin/init.d/agent start
+
+Record LUNS in Test/back-off section  (2nd HBA)
+
+Extend the volume groups to add the alternate links in the form
+
+  2nd HBA-Prim SP, 1st HBA-2nd SP,2nd HBA-2nd SP
+
+Remove EVA disk devices and device files:   
+rmsf -H <hardware path to EVA disk devices>
+
+Add lock disks to volume groups
+
+vgextend vg_pkgt01_02 /dev/dsk/500mb vol from EMC03
+vgextend vg_pkgt03_01 /dev/dsk/500mb vol from EMC04
+
+
+Backup LVM configuration:
+
+cd /etc/lvmconf
+vgcfgbackup vg_pkgt01_01
+vgcfgbackup vg_pkgt01_02
+vgcfgbackup vg_pkgt03_01
+vgcfgbackup vg_pkgt03_02
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Storage Migration - Update config on YFHP15
+
+1.    Unmount all data volumes
+
+umount /data1_yfpkgt01
+umount /data2_yfpkgt01
+umount /data3_yfpkgt01
+umount /data4_yfpkgt01
+umount /data5_yfpkgt01
+umount /data6_yfpkgt01
+umount /software/oracle_yfpkgt01
+umount /software/appl_yfpkgt01
+umount /archive_yfpkgt01
+umount /data1_yfpkgt03
+umount /data3_yfpkgt03
+umount /data4_yfpkgt03
+umount /data2_yfpkgt03
+umount /data5_yfpkgt03
+umount  /data6_yfpkgt03
+umount  /software/oracle_yfpkgt03
+umount /archive_yfpkgt03
+
+Create new map files
+
+cd /etc/lvmconf
+
+tar -cvf map.tar *map*
+
+remove old map files
+
+Create new maps
+vgexport -v -s -p -m /etc/lvmconf/vg_pkgt01_01.map vg_pkgt01_01
+vgexport -v -s -p -m /etc/lvmconf/vg_pkgt01_02.map vg_pkgt01_02
+vgexport -v -s -p -m /etc/lvmconf/vg_pkgt03_01.map vg_pkgt03_01
+vgexport -v -s -p -m /etc/lvmconf/vg_pkgt03_02.map vg_pkgt03_02
+
+deactivate the volume groups
+
+vgchange -a n vg_pkgt01_01
+vgchange -a n vg_pkgt01_02
+vgchange -a n vg_pkgt03_01
+vgchange -a n vg_pkgt03_02
+
+Update /etc/lvmpvg ensure it has the new device ids for the volume groups
+
+ON YFHP15
+
+cd /etc/lvmconf
+
+tar -cvf map.tar *map*
+
+remove old map files
+
+Export all volume groups
+
+vgexport -v  vg_pkgt01_01
+vgexport -v vg_pkgt01_02
+vgexport -v vg_pkgt03_01
+vgexport -v vg_pkgt03_02
+
+mkdir /dev/vg_pkgt01_01
+mkdir /dev/vg_pkgt01_02
+mkdir /dev/vg_pkgt03_01
+mkdir /dev/vg_pkgt03_02
+
+mknod /dev/vg_pkgt01_01/group c 64 0x050000
+mknod /dev/vg_pkgt01_02/group c 64 0x040000
+mknod /dev/vg_pkgt03_01/group c 64 0x070000
+mknod /dev/vg_pkgt03_02/group c 64 0x080000
+
+Ask Feg to move both cables from the EVA's to the EMC switches
+Ask storage to Zone in
+
+
+Copy the map files
+
+scp yox1723@yfhp14:/etc/lvmconf/vg_pkgt01_01.map
+scp yox1723@yfhp14:/etc/lvmconf/vg_pkgt01_02.map
+scp yox1723@yfhp14:/etc/lvmconf/vg_pkgt03_01.map
+scp yox1723@yfhp14:/etc/lvmconf/vg_pkgt03_02.map
+
+Import the disk groups
+
+vgimport -v -s -m /etc/lvmconf/vg_pkgt01_01.map vg_pkgt01_01
+vgimport -v -s -m /etc/lvmconf/vg_pkgt01_02.map vg_pkgt01_02
+vgimport -v -s -m /etc/lvmconf/vg_pkgt03_01.map vg_pkgt03_01
+vgimport -v -s -m /etc/lvmconf/vg_pkgt03_02.map vg_pkgt03_02
+
+Backup the config
+
+vgchange -a -r vg_pkgt01_01
+vgchange -a -r vg_pkgt01_02
+vgchange -a -r vg_pkgt03_01
+vgchange -a -r vg_pkgt03_02
+
+Mount a filesystem for each
+
+mount -f vxfs -o log,nodatainlog,largefiles /dev/vg_pkgt01_01/lvol1 /data1_yfpkgt01
+mount -f vxfs -o log,nodatainlog,largefiles /dev/vg_pkgt01_02/lvol2 /software/appl_yfpkgt01
+mount -f vxfs -o log,nodatainlog,largefiles /dev/vg_pkgt03_01/lvol1 /software/oracle_yfpkgt03
+mount -f vxfs -o log,largefiles,mincache=dsync,convosync=dsync /dev/vg_pkgt03_02/lvol7 /archive_yfpkgt03
+
+vgcfgbackup vg_pkgt01_01
+vgcfgbackup vg_pkgt01_02
+vgcfgbackup vg_pkgt03_01
+vgcfgbackup vg_pkgt03_02
+
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Check point,  Data is migrated, volume groups are updated on each node of the cluster
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Remove Secure-Path
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Remove Arrays from Secure-path
+
+YFHP14
+
+spmgr delete -r 5000-1FE1-5001-1330 all
+spmgr delete -r 5000-1FE1-5000-DEB0 all
+
+Remove  NAVCLI
+swremove NAVCLI
+
+Remove secure-path and reboot
+swremove -x autoreboot=true CPQswsp,r=*
+
+YFHP15
+
+spmgr delete -r 5000-1FE1-5001-1330 all
+spmgr delete -r 5000-1FE1-5000-DEB0 all
+
+Remove  NAVCLI
+swremove NAVCLI
+
+
+Remove secure-path and reboot
+swremove -x autoreboot=true CPQswsp,r=*
+
+Comment  out "OptionsSupported AutoTrespass" from /etc/Navisphere/agent.config on both nodes
+
+YFHP14
+YFHP15
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Install EMC Power-Path
+
+YFHP14
+
+Install power-path as per Z2GSM-IVI-026:-  (referes to Z2GSM-VEND-049)
+
+swinstall -x autoreboot=true -x mount_all_filesystems=false \
+-s /tmp/EMCPower.HPUX.5.0.0.tar EMCpower
+
+Interupt boot 
+
+YFHP15
+
+Install power-path as per Z2GSM-IVI-026:-  (referes to Z2GSM-VEND-049)
+
+swinstall -x autoreboot=true -x mount_all_filesystems=false \
+-s /tmp/EMCPower.HPUX.5.0.0.tar EMCpower
+
+Interupt boot 
+
+(Storage team) Change initiator settings on the array as follows to support PowerPath:
+
+ArrayCommPath:      Enabled
+                Unit Serial Number:  Array
+                Initiator Type:                           No HP Auto Trespass
+                Failover Mode:                         1
+
+
+Restart YFHP14
+
+emcpreg -install  (register license key)
+powermt config
+powermt set policy=co dev=all
+powermt display
+powermt save
+
+Restart YFHP15
+
+emcpreg -install  (register license key)
+powermt config
+powermt set policy=co dev=all
+powermt display
+powermt save
+
+
+Check the device names.  ioscan -fnC disk
+
+Run EMC grab
+Forward report to GSM
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+If the device names have changed, then follow Z2UNX-OSI-005 to vgscan and import the disk groups on YFHP14, then
+Create disk maps, copy to  yfhp15, import as per earlier instructions
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Update the Cluster Locks
+
+cd /etc/cmcluster
+
+vi pre_CE*****_clconfig.ascii
+
+FIRST_CLUSTER_LOCK_VG           /dev/vg_pkgt01_02
+SECOND_CLUSTER_LOCK_VG        /dev/vg_pkgt03_01
+
+FIRST_CLUSTER_LOCK_PV    /dev/dsk/500mb vol from EMC03
+SECOND_CLUSTER_LOCK_PV /dev/dsk/500mb vol from EMC04
+
+Save to new_ce*****_clconfig.ascii
+
+Activate the volume groups
+
+vgchange -c n vg_pkgt01_01
+vgchange -a y vg_pkgt01_01
+
+vgchange -c n vg_pkgt01_02
+vgchange -a y vg_pkgt01_02
+
+vgchange -c n vg_pkgt03_01
+vgchange -a y vg_pkgt03_01
+
+vgchange -c n vg_pkgt03_01
+vgchange -a y vg_pkgt03_01
+
+cmcheckconf -v -C new_ce*****_clconfig.ascii
+
+cmapplyconf -v -f -C new_ce*****_clconfig.ascii
+
+j)  restart the cluster software
+
+cmruncl -v
+
+Check the syslog for lock disk errors
+
+k)   restart the packages
+
+
+cmrunpkg -v -n yfhp14  yfpkgt01
+cmrunpkg -v -n yfhp15  yfpkgt03
+
+Check LVM volumes mount 
+Check syslog for lock disk errors
+Check Oracle starts
+
+Failover packages:-
+
+# cmhaltpkg -n yfhp14 -v yfpkgt01
+# cmviewcl -v
+# cmrunpkg -n yfhp15 -v yfpkgt01
+
+
+# cmhaltpkg -n yfhp15 -v yfpkgt03
+# cmviewcl -v
+# cmrunpkg -n yfhp14 -v yfpkgt03
+
+
+Check LVM volumes mount on opposite nodes
+Check syslog for lock disk errors
+Check Oracle starts
+
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Security Backup
+
+1)   Halt the packages:-
+
+cmhaltpkg yfpkgt03
+cmhaltpkg yfpkgt01
+
+2)  Halt the cluster
+
+cmhaltcl -f -v
+
+3)   Perform an Ignite backup on both nodes
+
+4)   Allow cluster software to start on reboot   - both nodes
+
+cd /etc/rc.config.d
+vi cmcluster
+set to:-
+
+  ""AUTOSTART_CLMD""=1

@@ -1,0 +1,33 @@
+=====================================================================================
+WorkPlan: 1.0 for increasing Memory in VM guest on ESX
+
+=====================================================================================
+
+SA will follow UNX-OSI-014 for VM management
+
+======================================================================================
+
+SA will power off the machine and add memory through VMRC console
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Verification: 
+============ 
+Customer will run "df -h" and "ls -ltr" to verify the file systems
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.( will change system list to previous state)
+Backout time: ~30 min.configuration
+=======================================================

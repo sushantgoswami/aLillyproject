@@ -1,0 +1,22 @@
+[root@unxds01 ~]# ldapsearch -x automountKey=/usr/public
+# extended LDIF
+#
+# LDAPv3
+# base <> with scope subtree
+# filter: automountKey=/usr/public
+# requesting: ALL
+#
+
+# /usr/public, auto_direct, gds, lilly.com
+dn: automountKey=/usr/public, automountMapname=auto_direct, dc=gds,o=lilly.com
+automountKey: /usr/public
+automountInformation: lois.am.lilly.com:/export/usrpublic
+objectClass: top
+objectClass: automount
+
+# search result
+search: 2
+result: 0 Success
+
+# numResponses: 2
+# numEntries: 1

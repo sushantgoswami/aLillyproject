@@ -1,0 +1,165 @@
+Hi Team,
+
+We have to cut the child CR and place the steps into the CR and get it reviewed from Storage and Unix for correct version of firmware.
+
+Perform the below steps.
+
+
+We have to perform firmware upgraded to 2.01A10 every time when we install HBA.
+
+Here is a general procedure to be executed on each host.
+
+Install the application kit.
+
+1.             cd /var/tmp
+2.             tar xvf /net/gutstools/guts_dev/var/tmp/pkgs/linux/emulex/elxocmcore-rhel5-rhel6-6.0.9.1-1.tar
+3.             cd elxocmcore-rhel5-rhel6-6.0.9.1-1
+4.             ./install.sh
+5.             /usr/sbin/ocmanager/stop_ocmanager  (Stop the OC manager)
+6.             Check the /etc/init.d directory for any scripts that start the ocmanager and remove or disable them so they do not start up on reboot.
+
+
+Upgrade the firmware.
+
+List the HBAs
+/usr/sbin/hbanyware/hbacmd listhbas    (path might be /usr/sbin/ocmanager)
+
+Confirm the firmware needs to be upgraded.
+/usr/sbin/hbanyware/hbacmd HbaAttributes  <port WWN>    (look at FW Version )
+
+
+Upgrade the HBA firmware on each HBA
+/usr/sbin/hbanyware/hbacmd  download <port WWN> /net/gutstools/guts_dev/var/tmp/pkgs/linux/emulex/lpe12000_ud201a10.all
+
+
+Confirm the firmware has been upgraded.
+/usr/sbin/hbanyware/hbacmd HbaAttributes  <port WWN>    (look at FW Version )
+
+
+3/7/2014 10:03:25 AM C182327
+================
+
+Work-plan 
+
+
+
+HBA software needs to be installed and firmware on HBAs upgraded on  AEMFG01
+
+On  PAEMFG01 (new systems) the firmware on the HBAs is 1.11A5  The firmware needs to be upgraded to 2.01A10.
+
+Here is a GENERAL procedure to be executed on the host
+
+Install the application kit.
+
+1.             cd /var/tmp
+2.             tar xvf /net/gutstools/guts_dev/var/tmp/pkgs/linux/emulex/elxocmcore-rhel5-rhel6-6.0.9.1-1.tar
+3.             cd elxocmcore-rhel5-rhel6-6.0.9.1-1
+4.             ./install.sh
+5.             /usr/sbin/ocmanager/stop_ocmanager  (Stop the OC manager)
+6.             Check the /etc/init.d directory for any scripts that start the ocmanager and remove or disable them so they do not start up on reboot.
+
+For instance.
+
+chkconfig --list elxhbamgrd
+elxhbamgrd      0:off   1:off   2:on    3:on    4:on    5:on    6:off
+
+chkconfig elxhbamgrd  off
+chkconfig --list elxhbamgrd
+elxhbamgrd      0:off   1:off   2:off   3:off   4:off   5:off   6:off
+
+Notification:
+==========================================
+Customer is aware and agrees with change via submission of CR and approval.
+
+
+EST PLAN
+==========
+
+Verify Version of HBA software.
+
+BACKOFF PLAN
+=============
+uninstall the firmware and software.
+
+Backoff plan:
+Revert the changed estimated time two hours.) 
+Above Comments From: C182327, KHAN ABUL FAZAL, 3176516008
+
+3/7/2014 11:00:39 AM U3X4909
+Reviewed.
+
+Above Comments From: U3X4909, SPALDING JAMES, 3174336569
+
+3/7/2014 4:29:57 PM C182327
+[root@aemfg01 elxocmcore-rhel5-rhel6-6.0.9.1-1]# hbacmd HBAAttrib 10:00:00:90:fa:4f:e7:9c                                                                               
+HBA Attributes for 10:00:00:90:fa:4f:e7:9c
+
+Host Name                   : aemfg01
+Manufacturer                : Emulex Corporation
+Serial Number               : 5CF341014V
+Model                       : AJ762B/AH402A
+Model Desc                  : HP 8Gb Single Channel PCI-e 2.0 FC HBA
+Node WWN                    : 20 00 00 90 fa 4f e7 9c
+Node Symname                : Emulex AJ762B/AH402A FV2.01A10 DV8.2.0.128.3p
+HW Version                  : 31004549
+Opt ROM Version             : 5.03a10
+FW Version                  : 2.01A10 (U3D2.01A10), sli-3
+Vendor Spec ID              : 10DF
+Number of Ports             : 1
+Driver Name                 : lpfc
+Device ID                   : F100
+HBA Type                    : AJ762B/AH402A
+Operational FW              : SLI-3 Overlay
+SLI2 FW                     : 2.01a10
+SLI3 FW                     : 2.01a10
+IEEE Address                : 00 90 fa 4f e7 9c
+Boot Code                   : Enabled
+Boot Version                : 5.03a10
+Driver Version              : 8.2.0.128.3p; HBAAPI(I) v2.3.b, 07-12-10
+Kernel Version              : 1.11a8
+Board Temperature           : Normal
+Function Type               : FC
+Sub Device ID               : 3281
+PCI Bus Number              : 10
+PCI Func Number             : 0
+Sub Vendor ID               : 103C
+
+[root@aemfg01 elxocmcore-rhel5-rhel6-6.0.9.1-1]# hbacmd HBAAttrib 10:00:00:90:fa:4f:e6:4e                                                                               
+HBA Attributes for 10:00:00:90:fa:4f:e6:4e
+
+Host Name                   : aemfg01
+Manufacturer                : Emulex Corporation
+Serial Number               : 5CF3410147
+Model                       : AJ762B/AH402A
+Model Desc                  : HP 8Gb Single Channel PCI-e 2.0 FC HBA
+Node WWN                    : 20 00 00 90 fa 4f e6 4e
+Node Symname                : Emulex AJ762B/AH402A FV2.01A10 DV8.2.0.128.3p
+HW Version                  : 31004549
+Opt ROM Version             : 5.03a10
+FW Version                  : 2.01A10 (U3D2.01A10), sli-3
+Vendor Spec ID              : 10DF
+Number of Ports             : 1
+Driver Name                 : lpfc
+Device ID                   : F100
+HBA Type                    : AJ762B/AH402A
+Operational FW              : SLI-3 Overlay
+SLI2 FW                     : 2.01a10
+SLI3 FW                     : 2.01a10
+IEEE Address                : 00 90 fa 4f e6 4e
+Boot Code                   : Enabled
+Boot Version                : 5.03a10
+Driver Version              : 8.2.0.128.3p; HBAAPI(I) v2.3.b, 07-12-10
+Kernel Version              : 1.11a8
+Board Temperature           : Normal
+Function Type               : FC
+Sub Device ID               : 3281
+PCI Bus Number              : 7
+PCI Func Number             : 0
+Sub Vendor ID               : 103C
+Above Comments From: C182327, KHAN ABUL FAZAL, 3176516008
+
+
+
+Send a mail to Stoarge team.
+
+Hi GSMO team,

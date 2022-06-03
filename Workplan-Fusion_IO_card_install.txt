@@ -1,0 +1,116 @@
+
+
+Below workplan has been used to install card.
+
+1. Download fusion IO software from HP site. You need to download the version which is matching to server uname -r o/p
+
+2. Copy the software in server 
+mkdir HPIO
+cp -pr RHEL-6_VSL-4.0.2.tar ioSphere_3.7-RHEL-6.tar HPIO
+cd HPIO/
+tar xvf RHEL-6_VSL-4.0.2.tar
+
+3. Check kernel version and install software matched to kernel version.
+uname -r
+rpm -ivh libvsl-dev-3.7.0.181-1.0.x86_64.rpm
+rpm -ivh libfio-dev-3.7.0.181-1.0.x86_64.rpm
+rpm -ivh hp-io-accel-msrv-3.7.0.181-1.0.x86_64.rpm
+rpm -ivh fio-agent-3.7.0.181-1.0.x86_64.rpm
+rpm -ivh fio-common-mgmt-3.7.0.181-1.0.x86_64.rpm
+rpm -ivh fio-smis-3.7.0.181-1.0.x86_64.rpm
+rpm -ivh fio-snmp-agentx-3.7.0.181-1.0.x86_64.rpm
+rpm -ivh hp-io-accel-msrv-3.7.0.181-1.0.x86_64.rpm
+rpm -ivh fio-agent-3.7.0.181-1.0.x86_64.rpm
+rpm -ivh libvsl-4.0.2.983-1.0.el6.x86_64.rpm
+rpm -ivh iomemory-vsl4-4.0.2.983-1.0.el6.src.rpm
+rpm -ivh iomemory-vsl4-2.6.32-358.el6.x86_64-4.0.2.983-1.0.el6.x86_64.rpm
+rpm -ivh libvsl-4.0.2.983-1.0.el6.x86_64.rpm
+rpm -ivh fio-util-4.0.2.983-1.0.el6.x86_64.rpm
+rpm -ivh fio-sysvinit-4.0.2.983-1.0.el6.x86_64.rpm
+rpm -ivh fio-common-4.0.2.983-1.0.el6.x86_64.rpm
+
+4. List module 
+lsmod | grep -i iomemory-vsl4
+
+5. modprobe iomemory-vsl
+
+If command 5 fails then there might be chances the iomemory-vsl4 has created new directory because fusion io software came with kernel version not with security patch level.
+
+6. 
+cd /lib/modules/
+ll 2.6.32-358.el6.x86_64
+
+7. Insert Module 
+cp iomemory-vsl4.ko /lib/modules/2.6.32-358.23.2.el6.x86_64/
+insmod /lib/modules/2.6.32-358.23.2.el6.x86_64/iomemory-vsl4.ko
+depmod `uname -r`
+modprobe iomemory-vsl4
+
+8. CHeck existing running services
+chkconfig --list | grep -i fio
+service fio-agent stop
+service fio-msrv stop
+service fio-snmp-agentx stop
+
+9. Allow init.d to load kernel module by removing the comment from
+/remote/bin/update /etc/sysconfig/iomemory-vsl4
+#ENABLED=1
+ENABLED=1
+
+10. Disable udev from loading kernel module by removing the comment from
+/remote/bin/update /etc/modprobe.d/iomemory-vsl4.conf
+#blacklist iomemory-vsl4
+blacklist iomemory-vsl4
+
+/remote/bin/update /etc/lvm/lvm.conf
+/remote/bin/update /etc/modprobe.d/iomemory-vsl4.conf
+cd /var/tmp/HPIO/fusionio-files-536d32f98bc69/ioMemory\ PX600/Linux_rhel-6/4.0.2-HP/Firmware/
+fio-update-iodrive -p ioaccelerator_4.0.2-20140410.fff
+
+Reboot server and confirm that
+a) the device is loaded, e.g. /dev/fioa /dev/fiob
+b) power is enabled by running fio-status command
+
+11. Create vg and lv per UNIX-COE Disk Management OSI
+
+pvcreate /dev/fioa /dev/fiob
+vgcreate iomemory_vg /dev/fioa /dev/fiob
+lvcreate -l 100%VG -n arcsight_iomemory_lv -i2 --stripesize 4k iomemory_vg
+mkfs.ext4 /dev/iomemory_vg/arcsight_iomemory_lv
+tune2fs -c 0 -i 0 /dev/iomemory_vg/arcsight_iomemory_lv
+mkdir -p /opt/arcsight
+
+
+12. Confirm that iomemory-vsl is enabled:
+    chkconfig iomemory-vsl --list
+    output: iomemory-vsl    0:off   1:on    2:on    3:on    4:on    5:on    6:off
+                
+13. vi /etc/fstab
+/dev/iomemory_vg/arcsight_iomemory_lv   /opt/arcsight ext4 defaults,noauto 0 0
+
+14. vi /etc/sysconfig/iomemory-vsl4
+LVM_VGS="/dev/iomemory_vg"
+MOUNTS="/opt/arcsight"
+
+service iomemory-vsl4 restart
+
+15.vi /etc/kdump.conf 
+options bonding mode=4 miimon=100
+blacklist iomemory-vsl4
+
+16. Reboot thrice to check card functionality.
+
+Regards,
+Rahul Choudhari
+TCS | IIHS | Global Service Delivery - Zone1 UNIX Lead
+Desk: +1 317-651-6019, Mob: +1 732-429-2474 | OPS TCS Platform Linux 24x7 Support +91-1246109259/+91-1246109262 
+Email: choudhari_rahul@network.lilly.com, Group Email: TCS_Platform_Linux@lists.lilly.com (For quick response please copy)
+Escalation Point: kumar_sanjeev3@network.lilly.com --> gopalnaidu_athmarao@network.lilly.com 
+For Any Assistance: https://lilly.service-now.com/ess/main.do
+Vacation Notice: 27-OCT-2014
+
+
+
+
+ 
+ 

@@ -1,0 +1,165 @@
+Work Plan for changing MultiNICA resource to bonding on phys-tirian and phys-clipsie
+
+Connect textcons from ILO ssh console using saarthi server to remotenp@ribphys-tirian.am.lilly.com and remotenp@ribphys-clipsie.am.lilly.com
+
+1. ***********************************************************************************
+
+run command only from ILO text console
+#haconf -dump 
+#haconf -makerw
+#hagrp -freeze MultiNICA -persistent
+#hagrp -freeze rabadash -persistent
+#hagrp -freeze clipsie -persistent
+
+#hares -unlink prd641_ora clipsie_MultiNic
+#hares -unlink prd640_ora rabadash_MultiNIC
+#hares -delete clipsie_MultiNic
+#hares -delete rabadash_MultiNIC
+
+#hares -delete MN_host
+
+1. ***********************************************************************************
+insert in /etc/modprobe.conf in both phys-clipsie and phys-tirian
+
+#####################################
+# bonding
+alias bond0 bonding
+options bond0 miimon=100 mode=1
+#
+#####################################
+
+run command
+#modprobe bonding (check for errors)
+
+2. ***********************************************************************************
+insert in /etc/sysconfig/network-scripts/ifcfg-bond0
+
+phys-clipsie
+#####################################
+DEVICE=bond0
+BOOTPROTO=none
+ONBOOT=yes
+NETMASK=255.255.252.0
+IPADDR=40.3.172.55
+USERCTL=no
+GATEWAY=40.3.175.254
+TYPE=Ethernet
+IPV6INIT=no
+PEERDNS=yes
+#####################################
+
+phys-tirian
+#####################################
+DEVICE=bond0
+BOOTPROTO=none
+ONBOOT=yes
+NETMASK=255.255.252.0
+IPADDR=40.3.172.53
+USERCTL=no
+GATEWAY=40.3.175.254
+TYPE=Ethernet
+IPV6INIT=no
+PEERDNS=yes
+#####################################
+
+3. ***********************************************************************************
+insert in /etc/sysconfig/network-scripts/ifcfg-eth0 
+and /etc/sysconfig/network-scripts/ifcfg-eth2
+
+phys-clipsie
+#####################################
+DEVICE=eth0
+HWADDR=00:26:55:4B:9B:C8
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+DEVICE=eth3
+HWADDR=00:26:55:4B:9B:CE
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+
+phys-tirian
+#####################################
+DEVICE=eth0
+HWADDR=00:26:55:4B:CE:18
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+DEVICE=eth3
+HWADDR=00:26:55:4B:CE:1E
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+
+4. ***********************************************************************************
+
+run command
+#service network restart
+
+(ensure bond0 came up with right interfaces, if bond0 didn't came up then do not execute step 5.)
+
+5. ***********************************************************************************
+
+-From the GUI of VCS console add new resource under MultiNICA (name MN_host) as NIC resource set interface bond0 to monitor
+-add proxy resource on both clipsie and rabadash (name proxy_rabadash and proxy_clipsie) monitor to MN_host 
+-add resource IP_rabadash and IP_clipsie on both service group and give NIC and bond0
+-configure IP on IP_rabadash (40.2.249.16)and IP_clipsie (40.2.249.15)
+-online the IP resources
+
+OR FROM command prompt same can be done.
+
+hares -add  MN_host  NIC  Multi-Nica
+hares -modify MN_host Critical 0
+hares -modify MN_host PingOptimize  1 
+hares -modify MN_host Mii  1 
+hares -modify MN_host Device  bond0 
+hares -modify MN_host NetworkHosts -delete -keys
+hares -modify MN_host Enabled 1
+
+hares -add  IP_rabadash  IP  rabadash
+hares -modify IP_rabadash Critical 0
+hares -modify IP_rabadash Device  bond0 
+hares -modify IP_rabadash Address  40.3.172.57 
+hares -modify IP_rabadash NetMask  255.255.252.0 
+hares -modify IP_rabadash Enabled 1
+hares -online IP_rabadash -sys phys-tirian (to be checked after unfreeze)
+
+hares -add  IP_clipsie  IP  clipsie
+hares -modify IP_clipsie Critical 0
+hares -modify IP_clipsie Device  bond0 
+hares -modify IP_clipsie Address  40.3.172.56 
+hares -modify IP_clipsie NetMask  255.255.252.0 
+hares -modify IP_clipsie Enabled 1
+hares -online IP_clipsie -sys phys-clipsie  (to be checked)
+
+hares -add  proxy_rabadash  Proxy  rabadash
+hares -modify proxy_rabadash Critical 0
+hares -modify proxy_rabadash TargetResName  MN_host 
+hares -modify proxy_rabadash TargetSysName   
+hares -modify proxy_rabadash Enabled 1
+
+hares -add  proxy_clipsie  Proxy  clipsie
+hares -modify proxy_clipsie Critical 0
+hares -modify proxy_clipsie TargetResName  MN_host 
+hares -modify proxy_clipsie TargetSysName   
+hares -modify proxy_clipsie Enabled 1
+
+hares -link IP_rabadash proxy_rabadash
+hares -link IP_clipsie proxy_clipsie
+
+************************************ The End **************************************
+
+

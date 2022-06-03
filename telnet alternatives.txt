@@ -1,0 +1,16 @@
+There are alternatives for ‘telnet’, so there’s no need to install it.
+
+From a bash shell session:
+-bash-4.1$ cat < /dev/tcp/uxwebprd.am.lilly.com/22
+SSH-2.0-OpenSSH_7.4
+^C
+Checks TCP port 22 on host uxwebprd.am.lilly.com.  For UDP substitute “udp” for “tcp”
+
+Or, use the ‘nc’ command from any shell:
+$ nc -v uxwebprd.am.lilly.com 22
+Ncat: Version 6.40 ( http://nmap.org/ncat )
+Ncat: Connected to 40.3.144.74:22.
+SSH-2.0-OpenSSH_7.4
+^C
+
+- Keith 

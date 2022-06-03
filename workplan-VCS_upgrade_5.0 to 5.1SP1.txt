@@ -1,0 +1,140 @@
+﻿***************************************************************
+WORK PLAN for Upgrade Storage foundation/VCS  5.1SP1 on both cluster nodes:
+Work plan also appliciable for upgrading only SF for SF only install execute only SF part.
+***************************************************************
+Note: ‘ssh’ should be configured to be used without the root password prompt so both nodes can be upgraded at the same time for VCS. Instructions for this are found on page 55 in the SFHA 5.1SP1 installation guide.
+1. Persistent freeze service groups on all nodes
+Commands for doing this:
+- Make the cluster configuration read / write.
+# haconf -makerw
+- Persistent freeze each and all cluster systems (perform this step for each cluster node).
+# hasys -freeze -persistent <nodeA>
+# hasys -freeze -persistent <nodeB>
+ 
+- Save and dump the cluster configuration.
+# haconf -dump -makero
+2. Run the 5.1SP1 ./installer from installation software, and select VCS only.
+- Select 'Veritas Cluster Server' to install
+- Do you agree with the terms of the End User License Agreement as specified in the EULA.pdf file present on media? [y,n,q,?] y
+- Select default '2' for what to install for VCS
+- enter all node names when prompted.
+- Answer 'y' to continue this installation.
+ 
+--- At this point upgrade the any non-Bundled agents (i.e., Oracle, Sybase) on both nodes.
+ 
+--- Check that the Types.cf has upgraded --- compare /etc/VRTSvcs/conf/Types.cf with /etc/VRTSvcs/conf/config/Types.cf --- the newer one is what should be under /etc/VRTSvcs/conf/config.
+ 
+3.  After completion of previous step persistent unfreeze service groups all nodes
+Commands for doing this:
+- Make the cluster configuration read / write.
+# haconf -makerw
+- Persistent unfreeze each and all cluster systems (perform this step for each cluster node).
+# hasys -unfreeze -persistent <nodeA>
+# hasys -unfreeze -persistent <nodeB>
+ 
+4. Switch the service groups to other nodes than one to install Storage Foundation
+Commands for doing this:
+c) Switch all service groups from one node (to be upgraded in next step) to other node.
+# hagrp -switch <service_group> -to <node>
+5. Persistent freeze all nodes
+Commands for doing this:
+- Persistent freeze each and all cluster systems (perform this step for each cluster node).
+# hasys -freeze -persistent <nodeA>
+# hasys -freeze -persistent <nodeB>
+ 
+- Save and dump the cluster configuration.
+# haconf -dump –makero
+ 
+--- At this point, all the cluster nodes should be running VCS 5.1SP1.
+ 
+Repeat the following steps, 6 – 9, for upgrading Storage Foundation for each node of the cluster:
+
+Storage_Foundation(open)
+
+6. Run ./installer to install Storage Foundation 5.1SP1 on node not having any service groups running
+- Select Storage Foundation to install (option 2)
+- Do you agree with the terms of the End User License Agreement as specified in the EULA.pdf file present on media? [y,n,q,?] y
+- Select software to install, option 3 for all Storage Foundation product
+- Enter node name installing Storage Foundation
+- Answer 'y' to continue this installation.
+---- Once the Storage Foundation installation has completed, reboot the system.
+Now Install SF 5.1SP1RP2 on this upgraded node:
+# cd <5.1SP1RP2> installation software
+# ./installrp -upgrade_kernelpkgs <node>
+Check the version of system:
+# rpm –aq | grep vx, (pkginfo | grep -i vx in solaris)
+…should show vxfs and vxvm at 5.1SP1RP2.
+Reboot the system
+
+Storage_Foundation(close)
+
+7.  After completion of previous step persistent unfreeze service groups all nodes
+Commands for doing this:
+- Make the cluster configuration read / write.
+# haconf -makerw
+- Persistent unfreeze each and all cluster systems (perform this step for each cluster node).
+# hasys -unfreeze -persistent <nodeA>
+# hasys -unfreeze -persistent <nodeB>
+ 
+8. Switch the services groups from one of uninstalled Storage Foundation nodes to one just upgraded
+Commands for doing this:
+- Switch all service groups from one node (to be upgraded in next step) to other node.
+# hagrp -switch <service_group> -to <node>
+9. Persistent freeze all nodes
+Commands for doing this:
+- Persistent freeze each and all cluster systems (perform this step for each cluster node).
+# hasys -freeze -persistent <nodeA>
+# hasys -freeze -persistent <nodeB>
+ 
+- Save and dump the cluster configuration.
+# haconf -dump -makero
+ 
+10. Repeat steps 6 - 9 until all nodes in the cluster have been upgraded to 5.1SP1RP2 for Storage Foundation.
+11. After all nodes have Storage Foundation upgraded, persistent unfreeze all nodes
+Commands for doing this:
+- Make the cluster configuration read / write.
+# haconf -makerw
+- Persistent unfreeze each and all cluster systems (perform this step for each cluster node).
+# hasys -unfreeze -persistent <nodeA>
+# hasys -unfreeze -persistent <nodeB>
+ 
+12. Run hastatus -sum
+# hastatus -sum
+13. Switch service groups to nodes where they are supposed to be running
+Commands for doing this:
+# hagrp -switch <service_group> -to <node>
+- Save and dump the cluster configuration.
+# haconf -dump –makero
+ 
+-- At this point all cluster nodes should now have SF 5.1SP1RP2 installed.
+ 
+Now upgrade the nodes to VCS 5.1SP1RP2
+From the pdf that’s included in the 5.1SP1RP2 installation software, page 73:
+Rolling upgrades take two discrete phases. In the first, you upgrade the kernel
+packages with exception of VCS packages and agent packages. In the second, you
+upgrade the non-kernel packages, which are VCS packages and agents packages.
+1.) Persistent freeze service groups on all nodes
+Commands for doing this:
+- Make the cluster configuration read / write.
+# haconf -makerw
+- Persistent freeze each and all cluster systems (perform this step for each cluster node).
+# hasys -freeze -persistent <nodeA>
+# hasys -freeze -persistent <nodeB>
+ 
+- Save and dump the cluster configuration.
+# haconf -dump -makero
+2.) Change directory to the 5.1SP1RP2 installation software and the ‘rpms’ directory.
+# cd <5.1SP1RP2> installation software
+# ./installrp -upgrade_nonkernelpkgs <nodeA> <nodeB>
+--- Check that the Types.cf has upgraded --- compare /etc/VRTSvcs/conf/Types.cf with /etc/VRTSvcs/conf/config/Types.cf --- the newer one is what should be under /etc/VRTSvcs/conf/config.
+ 
+- Make the cluster configuration read / write.
+# haconf -makerw
+- Persistent unfreeze each and all cluster systems (perform this step for each cluster node).
+# hasys -unfreeze -persistent <nodeA>
+# hasys -unfreeze -persistent <nodeB>
+ 
+- Save and dump the cluster configuration.
+# haconf -dump -makero
+14. Upgrade to SFHA 5.1SP1RP2 is now completed.
+15. This workplan also applies to 5.1SP1RP4

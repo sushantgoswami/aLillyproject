@@ -1,0 +1,54 @@
+======================================================================= 
+WORKPLAN 1.0 for modify database and listener resource in SG yfvcs07
+======================================================================== 
+## SA will follow the document UNIX-OSI-012 and make configuration changes as below.
+## SA will blackout the server during the Activity, the Activity may also include the shutdown of DB which is already running.
+## DBA team should intimate UNIX team before database installation. SA will freeze existing service groups.
+## After confirmation from DB team, unix will add new resources in existing SG, At this time DB will not be started by DBA.
+
+haconf -dump
+cp /etc/VRTSvcs/conf/config/main.cf /etc/VRTSvcs/conf/config/main.cf-PRE-CR
+haconf -makerw
+hagrp -freeze SGNAME
+
+Unix team will now contact DB team and gave go ahead for DB installtion.
+Once DB installed, add/modify the new the resources as below.
+
+hares -modify resource Home <new path>
+
+Unfreeze the rosource
+hagrp -unfreeze SGNAME
+
+haconf -dump -makero
+
+=====================================================
+OVERALL WORKFLOW
+=====================================================
+Unix SA will follow the document UNIX-OSI-12 for vcs configuration change
+Unix team will blackout servers and freeze the SG persistent
+DBA's will do their work and then give the servers back to Unix team.
+Unix team will unfreeze SG and make changes to VCS and online service group
+DBA's will verify that database/lsnr came up successfully
+=====================================================
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Verification: 
+============ 
+Hastatus -summ > should give the SG status as online
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.( will change system list to previous state)
+Backout time: ~30 min.configuration

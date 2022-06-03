@@ -1,0 +1,70 @@
+lvcreate -n patch_lv -L +5G rootvg
+m
+kfs.xfs /dev/rootvg/patch_lv
+
+mkdir /patch
+mount /dev/rootvg/patch_lv /patch/
+
+ 
+
+
+df -h /patch -- verify 5GB space 
+
+ 
+
+
+yum --disablerepo=\* --enablerepo=rhel\* install yum-plugin-downloadonly yum-utils createrepo
+
+ 
+
+
+yum --disablerepo=\* --enablerepo=rhel\* update --downloadonly --downloaddir=/patch
+
+ 
+
+
+createrepo --database /patch
+
+ 
+
+
+
+create a file repo in /etc/yum.repos.d with name CHG1760018.repo
+
+[CHG1760018]
+
+name=CHG1760018
+
+baseurl=file:///patch
+
+gpgcheck=0
+
+enabled=0
+
+ 
+
+
+save the file
+
+ 
+
+
+
+yum --disablerepo=\* --enablerepo=CHG1760018 check-update
+
+ 
+
+
+
+cp /etc/yum.repos.d/CHG1760018.repo /root
+ 
+
+
+to update /patch
+
+ 
+
+
+
+yum --disablerepo=\* --enablerepo=CHG1760018 update
+ 

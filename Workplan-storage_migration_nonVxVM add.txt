@@ -1,0 +1,39 @@
+======================================================================= 
+WORKPLAN 1.0 for storage migration or storage uplift
+======================================================================== 
+
+SA will follow UNIX-OSI-013 and do the following.
+SA will raise child CR to GSMO-SAN team for SAN devices 
+Will scan devices and create PV, extend VG, Will do then pvmove 
+
+pvcreate /dev/mapper/mpathXX (mpathXX is new device)
+
+vgextend VG /dev/mapper/mpathXX
+
+pvmove -v -n LV_names /dev/mapper/mpathAA /dev/mapper/mpathXX
+
+vgreduce VG /dev/mapper/mpathAA
+
+pvremove /dev/mapper/mpathAA
+
+Will unmap mpathAA from OS.
+
+multipathd -k <Enter>
+multipathd> remove map mpathAA
+<ctrl+d>
+
+Will verify the block device names sd<XY> associated with mpaths and remove it.
+
+echo 1 > /sys/block/sdaX/device/delete
+
+Will raise child CR to GSMO team to reclaim old devices.
+
+
+Verification:
+-------------------
+df -h 
+Customer will verify.
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.

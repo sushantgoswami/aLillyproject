@@ -1,0 +1,153 @@
+HP-PROLIANT-DL380-G7	
+2M21170183
+
+Calzada de Tlalpan #2024, Colonia Campestre Churubusco, 
+Delegacion Coyoacan, CP 04200.
+
+Alberto Antonio Romero Romero - Network 8:33 PM
+my number is: +52 55 54843765
+
+Please reach out “Juan Zamudio” (contact no +525517194713 and 525554537396 )  
+for Mexico DC as he will help you for touch base services.
+	
+===================================================================
+
+By continuing this conversation I agree that any conversation with a US or PR user and myself will be archived for legal preservation.
+Sushant Goswami - Network 7:16 PM
+Hi Rachel
+Rachel J Greene 7:16 PM
+hi
+Sushant Goswami - Network 7:17 PM
+we got a sev2 outage of server ME1MFG68.NA.AM.LILLY.COM causing outage of 2 databases
+the ME1MFG68.NA.AM.LILLY.COM server needs to be reset else services will not move to ME1MFG69.NA.AM.LILLY.COM 
+Do you have the telephone numbers of mexico Data center
+we are unable to reach them by any mean
+Rachel J Greene 7:24 PM
+we are trying to reach the IT leader by phone
+Sushant Goswami - Network 7:25 PM
+okay, thanks for help
+This conversation is saved in the Conversations tab in Lync and in the Conversation History folder in Outlook.
+Rachel J Greene 7:43 PM
+Sushant - I have added Francisco who is a member of my team and Javier who is at the site....please let them know what is needed
+Sushant Goswami - Network 7:44 PM
+Many thanks
+Hi Deep
+Francisco is with us, he can help us to reboot the server
+Javier Rubí 7:45 PM
+let me go to the site, 
+FRANCISCO GONZALEZ 7:45 PM
+sushant, im in indy, Javier can help us rebooting the server
+he is on site
+Sushant Goswami - Network 7:45 PM
+Thanks, Frank
+FRANCISCO GONZALEZ 7:46 PM
+np
+Javier Rubí 7:50 PM
+ready
+i am in the site
+do you need reboot the server?
+Sushant Goswami - Network 7:50 PM
+me1mfg68 need to rebooted
+Javier Rubí 7:50 PM
+ok
+is restaring now
+Javier Rubí 7:57 PM
+is very slow
+continue with bios display
+Javier Rubí 8:01 PM
+not started
+is frozen in the bios display
+but not show errors
+Javier Rubí 8:03 PM
+do you want i try any thing more?
+Deepika Nehra - Network 8:06 PM
+yes, please
+can you check light on ILO port? 
+Javier Rubí 8:08 PM
+sure
+Javier Rubí 8:14 PM
+in the bios sent message that ILO is not working
+send a many messages
+but the server is responding the ping
+Sushant Goswami - Network 8:15 PM
+let me check if i can log in
+Javier Rubí 8:16 PM
+before . i shutdown the server and disconnect the power cables
+after power on server 
+Sushant Goswami - Network 8:17 PM
+why i am getting this
+ERROR: A general system error occurred while detecting Management Processor.
+ACTION REQUIRED: Check if iLO and iLO driver are up and running.
+looks like it needs a motherboard replacement
+Javier Rubí 8:17 PM
+ok
+Javier Rubí 8:20 PM
+Sushant
+Sushant Goswami - Network 8:20 PM
+YES
+Javier Rubí 8:21 PM
+can you contact to Alberto if is necesary the change
+please
+Sushant Goswami - Network 8:21 PM
+i am checking if we have onsite support
+Javier Rubí 8:21 PM
+ok
+Sushant Goswami - Network 8:26 PM
+Javier, Can you give me the macine serial no. 
+Alberto Antonio Romero Romero - Network 8:26 PM
+Hello Sushant i have the number
+2M21170183	
+Sushant Goswami - Network 8:26 PM
+abd the type
+and
+Alberto Antonio Romero Romero - Network 8:27 PM
+HP-PROLIANT-DL380-G7	
+Rachel J Greene 8:27 PM
+is the server back up and running - i was pinged by my support team that they were given the go to restart the GMARS application
+Sushant Goswami - Network 8:28 PM
+Deepika can give some inputs on this
+Sushant Goswami - Network 8:31 PM
+Javier, and the Data Center address 
+Alberto Antonio Romero Romero - Network 8:32 PM
+This is the address
+Calzada de Tlalpan #2024, Colonia Campestre Churubusco, 
+Delegacion Coyoacan, CP 04200.
+Deepika Nehra - Network 8:32 PM
+yes, application can be started
+Javier Rubí 8:33 PM
+yes
+the address is correct
+Sushant Goswami - Network 8:33 PM
+thanks, do we have site telephone numbers
+Alberto Antonio Romero Romero - Network 8:33 PM
+my number is: +52 55 54843765
+Javier Rubí 8:34 PM
+Alberto is on Site too
+Sushant Goswami - Network 8:34 PM
+Thanks Alberto
+FRANCISCO GONZALEZ 8:35 PM
+Sushant is this motherboard error will cause the database server to fail again?.... or is more about elements of the motherboard you need to do the support?
+Sushant Goswami - Network 8:39 PM
+The motherboard can have some issues and it is possible to fail the server again, the server is giving issues from the last night.
+i have not done full daignostics, but it looks like some issue with board
+let me have all log files + diag done
+Alberto Antonio Romero Romero - Network 8:41 PM
+Sushant i think you are raising a case with HP, could you send me the Case number when you have it?
+Deepika Nehra - Network 8:41 PM
+i am raising case with HP
+FRANCISCO GONZALEZ 8:41 PM
+oka
+Deepika Nehra - Network 8:41 PM
+i'll share the case number
+FRANCISCO GONZALEZ 8:41 PM
+thx
+Alberto Antonio Romero Romero - Network 8:41 PM
+Ok thanks
+Deepika Nehra - Network 8:51 PM
+HP case - 
+4647956530	
+Alberto Antonio Romero Romero - Network 8:52 PM
+thanks Deepika
+You have been removed from this conversation. 9:02:59 PM
+This conversation is saved in the Conversations tab in Lync and in the Conversation History folder in Outlook.
+

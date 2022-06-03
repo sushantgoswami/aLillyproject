@@ -1,0 +1,117 @@
+Summary: VCS modification/deletion/add
+GBIP: No
+
+======================================================================= 
+WORKPLAN 1.0 for VCS resource addition in running Solaris Zone
+======================================================================== 
+
+SA will follow UNIX-OSI-012 and do the following.
+SA will follow UNIX-OSI-013 and do the following.
+=====================================================================
+
+#######################################################
+Storage uplift on Solaris local zone with VCS.
+#######################################################
+Prework:
+
+LRUE-YOSN70_# vxassist -g yosn30_datadg maxsize layout=mirror
+Maximum volume size: 4128768 (2016Mb)
+
+Seems 500MB is already available in the Disk Group, hence additional storage is not required.
+
+##################Workplan for creating and adding the FS in online Zone.##################
+
+# cp /etc/VRTSvcs/conf/config/main.cf /etc/VRTSvcs/conf/config/main.cf-CR-number
+# hagrp -freeze yosn30
+
+# vxassist -g yosn30_datadg make zones_yosn30_netiq 500m layout=mirror
+
+# newfs /dev/vx/rdsk/yosn30_datadg/zones_yosn30_netiq
+
+# mkdir /zones/yosn30/opt/netiq
+
+# mount /dev/vx/dsk/yosn30_datadg/zones_yosn30_netiq /zones/yosn30/opt/netiq
+
+# mkdir /zones/yosn30/root/opt/netiq
+
+# mount -F lofs /zones/yosn30/opt/netiq /zones/yosn30/root/opt/netiq
+
+Verification: execute "zlogin yosn30 df -k" and verify the new FS.
+
+##################Workplan for adding the FS in zone configuration##################
+
+1.Use the zonecfg command to add through Global Zone
+# zonecfg -z yosn30
+
+3.Add a file system to the configuration.
+# zonecfg:yosn30> add fs
+
+4.Set the mount point for the file system.
+# zonecfg:yosn30:fs> set dir=/opt/netiq
+
+5.Specify that /zones/yosn30/netiq in the global zone is to be mounted as /netiq in yosn30
+# zonecfg:yosn30:fs> set special=/zones/yosn30/opt/netiq
+
+6. Set the file system type.
+# zonecfg:yosn30:fs> set type=lofs
+
+7.End the specification.
+# zonecfg:yosn30:fs> end
+
+8.Verify and commit the configuration.
+# zonecfg:yosn30> verify
+# zonecfg:yosn30> commit
+# zonecfg:yosn30> exit
+
+Verification: execute "zonecfg -z yosn30 info" and verify the new FS.
+
+##################Workplan for adding new resource in VCS configuration.
+
+hares -add vol-netiq-yosn30 Volume yosn30
+hares -modify vol-netiq-yosn30 Volume zones_yosn30_netiq
+hares -modify vol-netiq-yosn30 DiskGroup yosn30_datadg
+hares -modify vol-netiq-yosn30 Enabled 1
+
+hares -add mnt-netiq-yosn30 Mount yosn30                  
+hares -modify mnt-netiq-yosn30 MountPoint "/zones/yosn30/opt/netiq"
+hares -modify mnt-netiq-yosn30 BlockDevice "/dev/vx/rdsk/yosn30_datadg/zones_yosn30_netiq"
+hares -modify mnt-netiq-yosn30 FSType ufs
+hares -modify mnt-netiq-yosn30 FsckOpt "%-y"
+hares -modify mnt-netiq-yosn30 CkptUmount 1
+hares -modify mnt-netiq-yosn30 SecondLevelMonitor 0
+hares -modify mnt-netiq-yosn30 SecondLevelTimeout 30
+hares -modify mnt-netiq-yosn30 VxFSMountLock 1
+hares -modify mnt-netiq-yosn30 Enabled 1
+
+hares -link vol-netiq-yosn30 yosn30_datadg 
+hares -link mnt-netiq-yosn30 vol-netiq-yosn30
+hares -link zone-yosn30 mnt-netiq-yosn30
+
+Verification:  execute hastatus -summ, the group should auto online after 5 minutes.
+
+After online, unfreeze the group yosn30
+# hagrp -unfreeze yosn30
+########################################################################
+
+Verification:
+-------------------
+Customer will verify by logging in the server
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+ommunication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.( will change system to previous state)
+Backout time: ~30 min.configuration
+=======================================================

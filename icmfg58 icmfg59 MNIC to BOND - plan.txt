@@ -1,0 +1,178 @@
+Work Plan for changing Multi-Nica resource to bonding on icmfg58 and icmfg59
+
+Connect textcons from ILO ssh console using saarthi/verdugo server to remotenp@ribicmfg58.am.lilly.com and remotenp@ribicmfg59.am.lilly.com
+
+1. ***********************************************************************************
+
+run command only from ILO text console
+#haconf -dump 
+#haconf -makerw
+#hagrp -freeze Multi-Nica -persistent
+#hagrp -freeze lhinp455 -persistent
+#hagrp -freeze lhprd566 -persistent
+#hagrp -freeze lhprd789 -persistent
+#hagrp -freeze lhprd797 -persistent
+
+#hares -unlink lhinp455_multiIP lhinp455_proxy
+#hares -unlink lhprd566_lsnr_1526 lhprd566_multiIP
+#hares -unlink lhprd566_multiIP   lhprd566_proxy
+#hares -unlink lhprd789_lsnr_1535 lhprd789_multiIP
+#hares -unlink lhprd789_multiIP   lhprd789_proxy
+#hares -unlink lhprd797_lsnr_1525 lhprd797_multiIP
+#hares -unlink lhprd797_multiIP   lhprd797_proxy
+
+#hares -delete lhinp455_multiIP
+#hares -delete lhprd566_multiIP
+#hares -delete lhprd789_multiIP
+#hares -delete lhprd797_multiIP
+
+#hares -delete MN_host
+
+1. ***********************************************************************************
+insert in /etc/modprobe.conf in both icmfg59 and icmfg58
+
+#####################################
+# bonding
+alias bond0 bonding
+options bond0 miimon=100 mode=1
+#
+#####################################
+
+run command
+#modprobe bonding (check for errors)
+
+2. ***********************************************************************************
+insert in /etc/sysconfig/network-scripts/ifcfg-bond0
+
+icmfg59
+#####################################
+DEVICE=bond0
+BOOTPROTO=none
+ONBOOT=yes
+NETMASK=255.255.255.0
+IPADDR=40.1.239.119
+USERCTL=no
+GATEWAY=40.1.239.254
+TYPE=Ethernet
+IPV6INIT=no
+PEERDNS=yes
+#####################################
+
+icmfg58
+#####################################
+DEVICE=bond0
+BOOTPROTO=none
+ONBOOT=yes
+NETMASK=255.255.255.0
+IPADDR=40.1.239.118
+USERCTL=no
+GATEWAY=40.1.239.254
+TYPE=Ethernet
+IPV6INIT=no
+PEERDNS=yes
+#####################################
+
+3. ***********************************************************************************
+insert in /etc/sysconfig/network-scripts/ifcfg-eth0 
+and /etc/sysconfig/network-scripts/ifcfg-eth2
+
+icmfg59
+#####################################
+DEVICE=eth0
+HWADDR=00:23:7d:e3:21:ec
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+DEVICE=eth2
+HWADDR=00:24:81:7c:5a:31
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+
+icmfg58
+#####################################
+DEVICE=eth0
+HWADDR=00:23:7d:e3:6f:60
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+DEVICE=eth2
+HWADDR=00:24:81:7c:5a:8d
+BOOTPROTO=none
+ONBOOT=yes
+MASTER=bond0
+SLAVE=yes
+USERCTL=no
+#####################################
+
+4. ***********************************************************************************
+
+run command
+#service network restart
+
+(ensure bond0 came up with right interfaces, if bond0 didn't came up then do not execute step 5.)
+
+5. ***********************************************************************************
+
+-From the GUI of VCS console add new resource under Multi-Nica (name MN_host) as NIC resource set interface bond0 to monitor
+-add resource on each service group as previous, take NIC type and bond0 for network interface
+-configure IP on IP_jewel (40.2.249.16)and IP_puzzle (40.2.249.15)
+
+OR FROM command prompt same can be done.
+
+hares -add  MN_host  NIC  Multi-Nica
+hares -modify MN_host Critical 0
+hares -modify MN_host PingOptimize  1 
+hares -modify MN_host Mii  1 
+hares -modify MN_host Device  bond0 
+hares -modify MN_host NetworkHosts -delete -keys
+hares -modify MN_host Enabled 1
+
+-wait 60 second MN_host will come online automatically.
+
+hares -add  lhinp455_multiIP  IP  lhinp455
+hares -modify lhinp455_multiIP Critical 0
+hares -modify lhinp455_multiIP Device  bond0 
+hares -modify lhinp455_multiIP Address  40.1.239.17 
+hares -modify lhinp455_multiIP NetMask  255.255.255.0 
+hares -modify lhinp455_multiIP Enabled 1
+hares -online lhinp455_multiIP -sys icmfg58 (check)
+
+hares -add  lhprd566_multiIP  IP  lhprd566
+hares -modify lhprd566_multiIP Critical 0
+hares -modify lhprd566_multiIP Device  bond0 
+hares -modify lhprd566_multiIP Address  40.1.239.24 
+hares -modify lhprd566_multiIP NetMask  255.255.255.0 
+hares -modify lhprd566_multiIP Enabled 1
+hares -online lhprd566_multiIP -sys icmfg59 (check)
+
+hares -add  lhprd789_multiIP  IP  lhprd789
+hares -modify lhprd789_multiIP Critical 0
+hares -modify lhprd789_multiIP Device  bond0 
+hares -modify lhprd789_multiIP Address  40.1.239.153 
+hares -modify lhprd789_multiIP NetMask  255.255.255.0 
+hares -modify lhprd789_multiIP Enabled 1
+hares -online lhprd789_multiIP -sys icmfg58 (check)
+
+hares -add  lhprd797_multiIP  IP  lhprd797
+hares -modify lhprd797_multiIP Critical 0
+hares -modify lhprd797_multiIP Device  bond0 
+hares -modify lhprd797_multiIP Address  40.1.239.222 
+hares -modify lhprd797_multiIP NetMask  255.255.255.0 
+hares -modify lhprd797_multiIP Enabled 1
+hares -online lhprd797_multiIP -sys icmfg58 (check)
+
+Link only the proxy resource with all service group IP resource as previous.
+
+************************************ The End **************************************
+
+

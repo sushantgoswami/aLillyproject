@@ -1,0 +1,69 @@
+=====================================================================================
+WorkPlan: 1.0 for increasing the size of following file system by 40GB which is in VCS cluster. (VXVM)
+====Mount points==========
+/ysvcs10/oracle/data/ora01
+/ysvcs10/oracle/data/ora02
+/ysvcs10/oracle/data/ora03
+=====================================================================================
+SA will follow UNX-OSI-013 for file system management and do the following.
+SA will follow UNX-OSI-012 for cluster management and do the following.
+SA will raise child CR when parent is approved to Z2/GSMT-SUPPORT team for new SAN devices from two storage boxes [40GB X 3] 
+SA will start the Storage scanning and configuring in the OS as per the OSI document UNX-OSI-013 for Linux OS
+======================================================================================
+The volumes are in mirror and 2 storage box are providing the luns
+
+ENCLR_NAME        ENCLR_TYPE     ENCLR_SNO      STATUS       ARRAY_TYPE     LUN_COUNT
+======================================================================================
+emc_clariion2     EMC_CLARiiON   CKM00114100623       CONNECTED    ALUA       22
+emc_clariion3     EMC_CLARiiON   CKM00114100636       CONNECTED    ALUA       21
+======================================================================================
+## SA will make backup of configuration
+haconf -dump
+cp /etc/VRTSvcs/conf/config/main.cf /etc/VRTSvcs/conf/config/main.cf-PRE-CR_no.
+haconf -makerw
+
+## SA will freeze the service group
+hagrp -freeze ysvcs10 -persistent
+
+## SA will scan the LUNS and add in to the ysvcs10_datadg DG
+echo "- - -" /sys/class/scsi_host/host(XX)/scan (on both servers)
+
+## SA will bounce the vx controller to bring the new devices in VxVM
+vxdctl enable (on both servers)
+
+## SA will initialize the disk in VxVM
+1. fdisk the disk and make empty partition
+2. vxdisksetup -i <new disk>
+3. vxdg -g ysvcs10_datadg adddisk <new disk>
+
+## SA will do vgextend and add the devices in appropriate VG
+vxresize -g ysvcs10_datadg ora01_ysvcs10 +40g alloc=disk1,disk2
+vxresize -g ysvcs10_datadg ora02_ysvcs10 +40g alloc=disk3,disk4
+vxresize -g ysvcs10_datadg ora03_ysvcs10 +40g alloc=disk5,disk6
+
+## ## SA will unfreeze the service group
+hagrp -unfreeze ysvcs10 -persistent
+haconf -dump -makero
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Verification: 
+============ 
+Customer will run "df -h" and "ls -ltr" to verify the file systems
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.( will change system list to previous state)
+Backout time: ~30 min.configuration
+=======================================================

@@ -1,0 +1,11 @@
+Hi Team,
+
+Sorry misunderstood.
+So all is ok correct?
+
+Btw he will need to add a bootblock to c3t3d0s4: ( the one we newfs'd - so it is bootable ) ( we missed this step )
+
+installboot /usr/platform/`uname -i`/lib/fs/ufs/bootblk /dev/rdsk/c3t3d0s4
+
+Regards
+Jim Lefebvre

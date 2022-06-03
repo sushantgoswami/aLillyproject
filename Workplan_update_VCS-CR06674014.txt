@@ -1,0 +1,75 @@
+===================================================== 
+WORKPLAN 1.0 for modifying resource on SG ipqar_86
+===================================================== 
+## SA will blackout the server during the Activity
+## DBA team should intimate UNIX team before database upgrade, so that SA will freeze the service group to prevent failover.
+## After confirmation from DB team, unix will freeze the relevant SG ipqar_86
+
+haconf -dump
+cp /etc/VRTSvcs/conf/config/main.cf /etc/VRTSvcs/conf/config/main.cf-PRE-CR-number
+haconf -makerw
+hagrp -freeze ipqar_86 -persistent
+
+Unix team will now contact DB team and gave go ahead for DB upgrade.
+Once DB upgraded modify the resources as below.
+
+hares -modify ipqar_86_oracle_tst_86 Home "/ipqar_86/oracle/product/root2_ipqar_86"
+hares -modify ipqar_86_oracle_tst_86 Pfile "/ipqar_86/oracle/product/root2_ipqar_86/dbs/initqar_86.ora"
+
+hares -modify ipqar_86_lsnr_1532 Home "/ipqar_86/oracle/product/root2_ipqar_86"
+hares -modify ipqar_86_lsnr_1532 lsnr_ipqar_86_1535
+
+=============================================
+Failover Testing:
+
+upgrade start time : 4/24/2014 3:00:00 PM  IST 
+upgrade end time   : 4/24/2014 7:00:00 PM IST 
+
+DBA Team would notify to Platform Team by raising a SEV-2 for VCS changes and failover testing between 4/24/2014 5:00:00 PM  IST  and 4/24/2014 7:00 Pm IST.
+DBA Team will provide 1 hour of downtime to unix team in order to perform this activity
+=============================================
+Unfreeze the resource
+hagrp -unfreeze ipqar_86 -persistent
+
+Now online the resource by VCS method
+hagrp -online ipqar_86 -sys icmdi02
+
+Do the failover testing by
+hagrp -switch ipqar_86 -to icmdi03
+hagrp -switch ipqar_86 -to icmdi02
+
+haconf -dump -makero
+
+=====================================================
+OVERALL WORKFLOW
+=====================================================
+Unix team will blackout servers and freeze the SG persistent
+DBA's will do their work and then give the servers back to Unix team. Database/listner will be stopped at this point
+Unix team will unfreeze SG and make changes to VCS and online service group on icmdi02
+DBA's will verify that database/lsnr came up successfully
+Unix team will switch service group over to icmdi03
+DBA's will verify that database/lsnr came up successfully
+=====================================================
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Verification: 
+============ 
+Hastatus -summ > should give the ipqar_86 status as online
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.( will change system list to previous state)
+Backout time: ~30 min.configuration
+

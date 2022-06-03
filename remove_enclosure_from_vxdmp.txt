@@ -1,0 +1,52 @@
+Following the removal of a previous array you will still find that enclosure listed in Volume Manager's vxdmpadm command output:
+
+# vxdmpadm listenclosure all
+ENCLR_NAME        ENCLR_TYPE     ENCLR_SNO            STATUS       ARRAY_TYPE
+============================================================================
+EMC_CLARiiON0     EMC_CLARiiON   APM00064805699       DISCONNECTED CLR-A/PF
+EMC_CLARiiON1     EMC_CLARiiON   APM00064800712       CONNECTED    CLR-A/PF
+Disk              Disk           DISKS                CONNECTED    Disk
+
+The EMC_CLARiiON0 enclosure is disconnected and confirmed as no longer attached to the system.
+
+This enclosure can be removed using the following procedure:
+
+1. Remove the persistent array data file:
+ 
+# rm /etc/vx/array.info
+
+2. Restart vxconfigd:
+
+For systems running VERITAS Volume Manager in a non-cluster environment
+ 
+# /sbin/vxconfigd -k
+
+For systems running VERITAS Volume Manager in a VERITAS Cluster Server environment
+ 
+a. Freeze all the service groups running on the system that has Volume Manager resources:
+   #  hagrp  -freeze  <service_group_name>
+b. Restart vxconfigd:
+  #  /sbin/vxconfigd -k
+c. Unfreeze the service groups:
+  #  hagrp  -unfreeze <service_group_name>
+
+For systems running Cluster Volume Manager
+ 
+a. Stop the cluster on the local node:
+   #  hastop -local
+b. Restart vxconfigd:
+  #  /sbin/vxconfigd -k
+c. Start the cluster on local node
+  #  hastart 
+ 
+This will force Volume Manager to regenerate to array.info file using only current system information.  Note that array names/numbering may change:
+
+# vxdmpadm listenclosure all
+ENCLR_NAME        ENCLR_TYPE     ENCLR_SNO            STATUS       ARRAY_TYPE
+============================================================================
+EMC_CLARiiON0     EMC_CLARiiON   APM00064800712       CONNECTED    CLR-A/PF
+Disk              Disk           DISKS                CONNECTED    Disk
+
+
+ 
+

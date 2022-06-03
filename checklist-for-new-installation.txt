@@ -1,0 +1,36 @@
+1. SIM - https://ix1hpmon2.am.lilly.com:50000/
+
+Option-->Discovery-->New-->Discover a Single System-->EnterName-->Enter IP-->Save
+
+Select name-->Run now
+
+2. Remotenp Password 
+
+Login to Console -->Administration-->User Adminsitration-->Add remotenp id and set password as per
+
+http://mysites10.rf.lilly.com/personal/rz98878/Global_PHS_Security_and_Compliance/SitePages/Home.aspx
+
+3. Sysrpt - http://guts/guts.shtml
+
+echo "su - unixrpt -s /bin/sh --session-command /usr/local/bin/sysrpt/sysrpt" | at NOW
+
+cd /tmp/ ; ls -ltrt
+
+4. /remote/iqoq/run_oq (O/p should have all passed field)
+
+5. /etc/sudo /etc/sudotrace 
+
+6. Race - It should be green
+
+7. Altiris 
+
+a) Hostid
+
+b) Patching Cycle
+
+c) Service Even Records (Enter Qualified date)
+
+8. cat /proc/net/bonding/bond0
+
+1.	Check new export list
+

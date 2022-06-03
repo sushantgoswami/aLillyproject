@@ -1,0 +1,52 @@
+Summary: shutdown server
+GBIP: No
+
+======================================================================= 
+WORKPLAN 1.0 to shutdown server.
+======================================================================== 
+
+UNX-OSI-039 UNIX CoE Platform/Server Reboot/shutdown Procedure 
+Version 1.0 
+
+
+# DB team will freeze the service groups if needed
+# DB team will stop the DB and raise P2 to UNIX team for reboot (if appliciable)
+# APP team will stop the applications if needed and confirm SA.
+# SA will verify the following things.
+## Vcenter and console accessibility (if VM guest)
+## ILO accessibility (if physical)
+## root passwords
+## bootloader passwords
+## configuration output.
+## server blackout
+## Server configuration output
+## Protected application group blackout if needed
+## Outage communication.
+## SA will check all service group should be in freeze state. (if the server is in cluster)
+
+# SA will shutdown server by shutdown -g0 -y -i0 for linux
+# SA will reboot the server by 'shutdown -g0 -y -i5' for Solaris
+
+# After startup of server, SA will do sanity test. 
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Verification: 
+============ 
+Customer will check the databases.
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.
+Backout time: ~30 min.configuration

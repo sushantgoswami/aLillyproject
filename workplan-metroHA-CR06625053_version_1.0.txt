@@ -1,0 +1,143 @@
+WORK PLAN FOR MILITARY / METRO HA - version 1.0
+
+========================
+Check Login with root/Administrator user from ILO on 3 servers.
+Check Login with the SSH to the server.
+Check Login with console for ILO through root user.
+================
+Login with SSH and do the following:
+
+1. Take the configuration backup by output backup script.
+2. Take the config backup of RILOE by 
+# hponcfg -w <servername>.<date>.xml
+3. Make the VCS configuration RW 
+# haconf -makerw
+4. copy the current main.cf 
+# cp -p /etc/VRTSvcs/conf/config/main.cf /etc/VRTSvcs/conf/config/main.cf-<today's date>
+=====================
+5. offline all service group
+
+================
+6. change the VIP of Service Groups as per CR
+# hares -modify IPN_lhprd300 Address 40.3.172.28
+# hares -modify IPN_lhprd201 Address 40.3.172.32
+# hares -modify IPN_lhprd336 Address 40.3.172.33
+# hares -modify IPN_lhqar300 Address 40.3.172.37
+# hares -modify IPN_lhqar336 Address 40.3.172.38
+# hares -modify IPN_lhtst201 Address 40.3.172.39
+=================
+8. Modify the MNIC IP
+hares -modify MN_host Device artillery  "eth0   40.3.172.35     eth2    40.3.172.35"
+hares -modify MN_host Device battalion  "eth0   40.3.172.36     eth2    40.3.172.36"
+hares -modify MN_host Device infantry   "eth0   40.3.172.34     eth2    40.3.172.34"
+
+hares -modify MN_host RouteOptions "default gw 40.3.175.254" 
+   
+================= 
+9. Freeze, Close and save the configuration
+# hagrp -freeze  IPN_lhprd300 -persistent
+# hagrp -freeze  IPN_lhprd201 -persistent
+# hagrp -freeze  IPN_lhprd336 -persistent
+# hagrp -freeze  IPN_lhqar300 -persistent
+# hagrp -freeze  IPN_lhqar336 -persistent
+# hagrp -freeze  IPN_lhtst201 -persistent
+# hagrp -freeze  ESM-Notification -persistent
+# haconf -dump -makero
+=========================
+10. Stop HA on all nodes
+# hastop -force -all
+
+=================
+11. modify the network parameters for ifcfg-eth0 on all 3 hosts by these settings
+# INFANTRY 40.3.172.34 
+# ARTILLERY 40.3.172.35 
+# BATTALION 40.3.172.36 
+# Subnet Mask is: 255.255.252.0 
+==================
+12. modify the new gateway in /etc/sysconfig/network
+# Default Gateway: 40.3.175.254 
+==================
+13. modify the /etc/hosts file, look for these 3 server entry and modify them accordingly.
+
+40.1.255.40             artillery.am.lilly.com artillery
+40.1.255.41             infantry.am.lilly.com infantry 
+40.1.255.42             battalion.am.lilly.com battalion
+
+
+note that all the servers have entries for all 3 servers, so will need to change them all
+
+==================
+14. Login from Web the ILO console and shutdown one by one through 
+
+shutdown -h now
+
+# INFANTRY 
+# ARTILLERY
+# BATTALION
+========================
+
+15. Login from Web ILO console and change the IP address / subnet mask / gateway for the ILO 
+# After changing the IP of ILO, you will not be connected any more to the servers
+
+
+========================
+16. Inform ITF person to de rack the servers and send to another destination.
+========================
+
+TASK 2 on another DC
+===================================
+17. confirm connection for all ILO ports, dual network cables, dual power supply.
+
+18. ensure you can ping the new ILO IP address, and can connect try both Web and ssh to access ILO
+
+19. Start the infantry server from the ILO console, and take remote console or through ssh via textcons.
+
+20. boot it up, ensure that you can connect it through SSH.
+
+21. now seed the gab through # gabconfig -c -x
+
+22. after gab seeding start HA daemon # hastart
+
+33. once HA is started use hastatus -summ to display the nodes, make sure you have.
+ARTILLERY - faulted state
+BATTALION - faulted state
+
+Ensure Multi-Nica should be online on all nodes.
+Ensure the df -h contains all partitions
+Ensure pvdisplay gives same output
+Ensure you have all luns as per previous configuration.
+
+34. start the ARTILLERY and after came up ensure it became running state and you can connect the server through SSH
+35. start the BATTALION and after came up ensure it became running state and you can connect the server through SSH
+
+check on all three servers:
+Ensure the df -h contains all partitions
+Ensure pvdisplay gives same output
+Ensure you have all luns as per previous configuration.
+
+work with the DBA's to see how they want to do the db testing
+before you get them involved, I'd be sure that you can online the filesystems and switch them to all the nodes of the clusters...once that's done you can do the app testing
+
+37. Unfreeze the group one from the below table and start it, ensure it became online then unfreeze another group and start it as previous
+    Do not unfreeze all and start simultaneously, else server will run on high load.
+
+# haconf -makerw         
+# hagrp -unfreeze  IPN_lhprd300 -persistent
+# hagrp -unfreeze  IPN_lhprd201 -persistent
+# hagrp -unfreeze  IPN_lhprd336 -persistent
+# hagrp -unfreeze  IPN_lhqar300 -persistent
+# hagrp -unfreeze  IPN_lhqar336 -persistent
+# hagrp -unfreeze  IPN_lhtst201 -persistent
+# hagrp -unfreeze  ESM-Notification -persistent
+             
+             
+# hagrp -online lhprd201 -sys infantry
+# hagrp -online lhprd300 -sys artillery
+# hagrp -online lhprd336 -sys infantry
+# hagrp -online lhqar300 -sys battalion
+# hagrp -online lhqar336 -sys battalion
+# hagrp -online lhtst201 -sys battalion
+# hagrp -online ESM-Notification -sys artillery
+=========================================================
+38. ensure all service groups are up and all VIP for service groups are also up
+

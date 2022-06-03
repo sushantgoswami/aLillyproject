@@ -1,0 +1,59 @@
+====================================================================== 
+WORKPLAN 1.0 for storage migration HPUX
+======================================================================== 
+
+SA will follow UNIX-OSI-013 and do the following.
+SA will raise child CR to GSMO-SAN team for SAN devices
+
+===============================================
+1. Scan new LUN
+#ioscan -funC disk
+2. Create their associated device file
+#insf –C disk
+3. Find the device file name in through ioscan
+#ioscan -funC disk
+4. Check/match/Compare the information with the storage team given with the output of the below command
+# cd /home/c181253/emcgrab/tools/bin
+# inq.hpux64 -nodots -clar_wwn
+5.If information is verified, go to the next step else connect to the storage team for the further actions and repeat above steps.
+6. Take /etc/lvmtab backup
+# cp  /etc/lvmtab /etc/lvmtab_CE04239455
+7. Physical Volume initialization with PVCREATE, (Physical volume info will be collected through Step 3)
+# pvcreate /dev/rdsk/cXtXdX
+8. Add disk to volume group "vgora"
+# vgextend /dev/vgora /dev/dsk/cXtXdX
+9. Add mirroring to the existing LV 
+# lvextend -m 2 /dev/vgora/lvol1 /dev/dsk/cXtXdX
+10. Remove mirroring from OLD disk
+#lvreduce -m 1 /dev/vgora/lvol1 /dev/dsk/cYtYdY
+11. Remove old LUNs (/dev/dsk/cYtYdY from VG vgora
+# vgreduce /dev/vgora /dev/dsk/cYtYdY
+12. Physical Volume removal of Old disk 
+# pvremove /dev/rdsk/cYtYdY
+13. Remove old disk from OS
+# rmsf -H <HW ADDR>
+14.Repeat for all volumes
+====================================
+
+Verification:
+-------------------
+
+Customer will verify by df -h.
+
+Notification: 
+------------------
+Customer provided awareness/agreement via approval of this CR (or a parent CR). Will notify customer when work is done by IM or email.
+
+Communication: 
+============= 
+Owner has submitted this request and is aware of change and the parties have agreed to the change.
+
+Justification: 
+============= 
+User Request
+
+Test/Backoff: 
+============ 
+Test: N/A
+Backout plan: Revert configuration changes.( will change configuration to previous state)
+Backout time: ~30 min.configuration

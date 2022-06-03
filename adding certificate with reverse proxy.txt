@@ -1,0 +1,42 @@
+Adding Certificate with reverse proxy
+
+#   Server Certificate:
+# Point SSLCertificateFile at a PEM encoded certificate.  If
+# the certificate is encrypted, then you will be prompted for a
+# pass phrase.  Note that a kill -HUP will prompt again.  A new
+# certificate can be generated using the genkey(1) command.
+# SSLCertificateFile /etc/pki/tls/certs/localhost.crt
+SSLCertificateFile /etc/httpd/conf/ssl.crt/genescreenp.am.lilly.com.crt
+
+#   Server Private Key:
+#   If the key is not combined with the certificate, use this
+#   directive to point at the key file.  Keep in mind that if
+#   you've both a RSA and a DSA private key you can configure
+#   both in parallel (to also allow the use of DSA ciphers, etc.)
+# SSLCertificateKeyFile /etc/pki/tls/private/localhost.key
+SSLCertificateKeyFile /etc/httpd/conf/ssl.key/genescreenp.am.lilly.com.key
+
+#   Server Certificate Chain:
+#   Point SSLCertificateChainFile at a file containing the
+#   concatenation of PEM encoded CA certificates which form the
+#   certificate chain for the server certificate. Alternatively
+#   the referenced file can be the same as SSLCertificateFile
+#   when the CA certificates are directly appended to the server
+#   certificate for convinience.
+#SSLCertificateChainFile /etc/pki/tls/certs/server-chain.crt
+SSLCertificateChainFile /etc/httpd/conf/ssl.crt/genescreenp.am.lilly.com.chain.crt
+
+
+
+
+## CHG0058679 ## Reverse Proxy - added by Genedata
+ProxyRequests Off
+ProxyTimeout 3600
+<Proxy *>
+       Order deny,allow
+       Allow from all
+</Proxy>
+ProxyPass / http://127.0.0.1:8080/ retry=0
+ProxyPassReverse / http://127.0.0.1:8080/
+AddDefaultCharset Off
+

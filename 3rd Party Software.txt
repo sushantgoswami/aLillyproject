@@ -1,0 +1,56 @@
+Note : 
+All below items are mandatory & must be answered  when requesting the OS Platform Team to install Non-Standard Software on non-POC hosts.  
+ 
+The OS Platform Team will cancel the CR if answers are not satisfactorily completed.
+ 
+Non-Standard Software is any software other than that provided by OS Platform Team as part of its standard service.  All software packages (rpm) provided by Red Hat, within the standard distribution for the OS version, is included in the Standard Service Offering.
+ 
+POC hosts are those designated as “Proof-of-Concept” (POC) by LillyCloud, and have host names beginning with “poc”.  
+ 
+The OS Platform Team only performs software installations requiring privileged OS access to accomplish.  Non-privileged installations are the responsibility of the Host Custodians.
+ 
+1.	Show evidence that the software is actively maintained by its author/vendor.   
+Include:
+a.	Last release date
+b.	Author/vendor stated development plans.
+c.	Patch/release history/schedules.
+ 
+2.	Show that Lilly  has a legal license to install and use the proposed software.
+ 
+You should consult Lilly Legal to understand end-user license agreements for an enterprise environment.  In many cases, if Lilly has a contract with the vendor (or reseller) to supply the software, presenting that fact will suffice.
+ 
+The LRL business unit has, in consultation in with Lilly Legal, developed a governance process for licensing of Open Source Software (OSS).  If your software is OSS, you should first check the LRL OSS Governance site (http://lillynet.global.lilly.com/sites/ditse/OSSGovernance/default.aspx) to learn if your software license has already been reviewed and approved.  The OS Platform Team accepts the LRL OSS Governance site for evidence of legal license.  
+ 
+3.	State the checksum value to use for verifying the integrity & authenticity of the package/rpm being installed.
+ 
+State the file name and the checksum value (e.g., md5sum or sha256sum), preferably provided by the software provider, for the software package/rpm.
+Software installation onto QA and Production assets SHALL be executed ONLY  from files that are verified, by the checksum,  to have the same content as the previously tested and approved installation files. 
+ 
+4.	Assess vulnerabilities in the software.  
+ 
+Include:
+a.	Vulnerability disclosures by the software author/vendor
+b.	Vulnerability history for the software from  https://nvd.nist.gov/search.
+c.	If the Software is a Web Application, then provide Lilly Vulnerability scan results.  Install the software, having a checksum matching Item #3 above) on a POC host and use this link,  Host or Web Application Vulnerability Scan,  to request a vulnerability scan on the POC host.  (See Note above for definition of a POC host).  Summarize any vulnerabilities found.
+d.	The plan/method for discovering, assessing, and fixing new vulnerabilities in the software so that fixes are applied within 30 days of availability.
+NOTE:  These points should already be addressed in an approved Security Plan (for QA and Production).  
+5.	State effects of software installation, and configuration, on host.
+ 
+Include:
+a.	Local accounts and groups it requires
+b.	(Linux) Root-owned files created or changed (including ownership/permissions).
+ 
+6.	Location and Identification of Installation Files
+ 
+State the file path, including file name, for the installation file.   Alternately, installation from a Lilly-controlled web server may be provided.
+The checksum of the file must match the checksum given in item #3 above.
+ 
+OS Platform Team will NOT install from sources that are NOT Lilly-controlled (e.g., vendor web site, public software repositories).
+ 
+7.	State the installation instructions
+ 
+Instructions must include explicit responses to all queries presented by the installation process.
+Instructions for installation on a QA asset should be from an IVI document that is either in draft form or that is accepted by the Governing Quality Unit.
+Instructions for installation on Production asset must be from an IVI document that is approved and that is accepted by the Governing Quality Unit. 
+NOTE:  Although the OS Platform Team executes instructions from an IVI, they are NOT responsible for certifying the Installation Record.  Certification (verification) of the Installation Record is the responsibility of the organization that owns the IVI.
+NOTE:  For cases, such as one-time installations, where an IVI document is not warranted, a Change Record that serves as the Installation Record will suffice.
