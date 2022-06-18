@@ -1,0 +1,16 @@
+<VirtualHost *:80>
+      ServerAdmin webmaster@example.com
+      ServerName app03.reactjs.sushantgoswami.ml
+      ServerAlias www.app03.reactjs.sushantgoswami.ml
+
+      ErrorLog /var/www/html/app01/logs/error.log
+      CustomLog /var/www/html/app01/logs/access.log combined
+      ProxyRequests Off
+      <Proxy *>
+       Order deny,allow
+       Allow from all
+      </Proxy>
+      ProxyPass / http://localhost:3003/
+      ProxyPassReverse / http://localhost:3003/
+      # RewriteRule ^/cds$ /cds [R]
+</VirtualHost>
