@@ -2,11 +2,7 @@
 #-------------------------------------------------------------------------------
 #- Original Author...: Sushant Goswami
 #- Creation Date.....: 03 July 2018
-#- Purpose...........: Script is intended to patch the ECTS servers	
-#- Notes.............: Creation of script via CHG1290158
-#-------------------------------------------------------------------------------
-#-            (C) Copyright 2018 Eli Lilly and Company
-#-                       All Rights Reserved
+#- Purpose...........: Script is intended to patch the servers	
 #-------------------------------------------------------------------------------
 # description: ects_patching_script.sh
 #-------------------------------------------------------------------------------                                                                                          
